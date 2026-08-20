@@ -118,6 +118,14 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 
 The current MVP remains a frontend simulation backed by typed in-memory services and browser persistence. The next platform milestone is the modular backend, database, simulation API, and event broker.
 
+## Backend foundation progress
+
+- ASP.NET Core modular-monolith application in `apps/api`
+- Health, flight collection, flight detail, and network-summary endpoints
+- Search, status, and disruption-risk flight filters
+- Repository abstraction ready for PostgreSQL persistence
+- Integration tests using an in-process API host
+
 ## Planned architecture
 
 The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The current UI uses an in-memory typed data source so it can later be replaced by NgRx effects and backend APIs without changing the interaction model.
