@@ -69,6 +69,8 @@ scripts/complete-phase.sh "Phase N: short description"
 
 The phase command runs full verification, pushes the branch, and creates or locates the GitHub pull request. See `docs/DELIVERY_WORKFLOW.md` for setup and usage.
 
+Commits and pull requests use the repository owner's configured Git and GitHub identities. The delivery scripts reject Codex, OpenAI, bot, co-author, or generated-by attribution.
+
 ## Phase 3 — Complete
 
 The disruption and network-impact engine is implemented:

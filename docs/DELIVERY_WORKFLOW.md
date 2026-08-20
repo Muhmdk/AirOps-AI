@@ -10,6 +10,21 @@ git pull --ff-only
 git switch -c codex/phase-5-ml-risk-model
 ```
 
+The `codex/` text is only a branch namespace. It is never used as commit or pull-request authorship.
+
+## Configure your authorship once
+
+Set the repository-local commit identity and the only GitHub account permitted to create phase pull requests:
+
+```bash
+git config --local user.name "Muhammad Khan"
+git config --local user.email "Muhammadlive_@hotmail.com"
+git config --local airops.githubUser "Muhmdk"
+gh auth login
+```
+
+The automation rejects missing identities, Codex/OpenAI/bot attribution, AI co-author trailers, and a GitHub login that does not match `airops.githubUser`.
+
 ## Complete a feature
 
 Review the feature diff, run its relevant tests, then commit only its files:
@@ -28,7 +43,7 @@ scripts/complete-feature.sh "test(ml): cover prediction fallback"
 
 ## Complete a phase
 
-First authenticate the GitHub CLI once on the workstation:
+If GitHub CLI authentication expires, authenticate again:
 
 ```bash
 gh auth login

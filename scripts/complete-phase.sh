@@ -14,6 +14,7 @@ title="$1"
 base_branch="${2:-main}"
 repo_root="$(git rev-parse --show-toplevel)"
 branch="$(git branch --show-current)"
+expected_github_user="$(git config --local --get airops.githubUser || true)"
 
 if [[ ! "$branch" =~ ^codex/phase-[0-9]+-[a-z0-9._-]+$ ]]; then
   echo "Phase completion requires a branch named codex/phase-<number>-<short-name>." >&2
@@ -33,6 +34,22 @@ fi
 
 if ! gh auth status >/dev/null 2>&1; then
   echo "GitHub CLI is not authenticated. Run: gh auth login" >&2
+  exit 1
+fi
+
+if [[ -z "$expected_github_user" ]]; then
+  echo "Configure the permitted PR author with: git config --local airops.githubUser YOUR_GITHUB_LOGIN" >&2
+  exit 1
+fi
+
+authenticated_github_user="$(gh api user --jq .login)"
+if [[ "$authenticated_github_user" != "$expected_github_user" ]]; then
+  echo "Authenticated GitHub user '$authenticated_github_user' does not match required PR author '$expected_github_user'." >&2
+  exit 1
+fi
+
+if printf '%s\n%s\n' "$title" "$authenticated_github_user" | grep -Eiq 'codex|openai|chatgpt'; then
+  echo "AI or bot attribution is not permitted in phase PR authorship or titles." >&2
   exit 1
 fi
 

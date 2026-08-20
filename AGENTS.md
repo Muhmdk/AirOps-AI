@@ -22,6 +22,14 @@ After completing each independently testable feature:
 
 Use `scripts/complete-feature.sh` to create the commit. Pass explicit paths whenever practical.
 
+## Authorship
+
+- Commits must use the repository owner's configured Git name and email.
+- Never use Codex, OpenAI, ChatGPT, an AI agent, or a bot as the commit author or committer.
+- Never add `Co-authored-by`, `Generated-by`, or similar AI-attribution trailers.
+- Pull requests must be created by the GitHub account configured in `airops.githubUser`.
+- Do not mention Codex or AI assistance in commit messages, pull-request titles, or pull-request bodies unless the user explicitly requests it.
+
 ## Phase completion
 
 A phase is complete only when all planned features are committed, the full verification suite passes, and the worktree is clean.

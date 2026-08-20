@@ -14,9 +14,21 @@ message="$1"
 shift
 repo_root="$(git rev-parse --show-toplevel)"
 branch="$(git branch --show-current)"
+author_name="$(git config --local user.name || true)"
+author_email="$(git config --local user.email || true)"
 
 if [[ "$branch" == "main" || "$branch" == "master" || -z "$branch" ]]; then
   echo "Feature commits must be created on a phase branch, not $branch." >&2
+  exit 1
+fi
+
+if [[ -z "$author_name" || -z "$author_email" ]]; then
+  echo "Repository-local user.name and user.email must be configured before committing." >&2
+  exit 1
+fi
+
+if printf '%s\n%s\n%s\n' "$author_name" "$author_email" "$message" | grep -Eiq 'codex|openai|chatgpt|co-authored-by|generated-by'; then
+  echo "AI or bot attribution is not permitted in commit identity or messages." >&2
   exit 1
 fi
 
@@ -52,6 +64,6 @@ if git diff --cached --name-only | grep -E '(^|/)(\.env($|\.)|node_modules/|dist
 fi
 
 git diff --cached --check
-git commit -m "$message"
+git -c user.name="$author_name" -c user.email="$author_email" commit -m "$message"
 
 echo "Feature committed on $branch at $(git rev-parse --short HEAD)."
