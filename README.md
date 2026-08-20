@@ -58,6 +58,17 @@ npm run e2e
 
 The end-to-end suite expects the app to be running at `http://localhost:4200`.
 
+## Delivery workflow
+
+Development uses one branch and one pull request per phase. Each independently testable feature is committed separately with a Conventional Commit message.
+
+```bash
+scripts/complete-feature.sh "feat(scope): describe the feature" -- path/to/feature
+scripts/complete-phase.sh "Phase N: short description"
+```
+
+The phase command runs full verification, pushes the branch, and creates or locates the GitHub pull request. See `docs/DELIVERY_WORKFLOW.md` for setup and usage.
+
 ## Phase 3 — Complete
 
 The disruption and network-impact engine is implemented:
