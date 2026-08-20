@@ -1,0 +1,2 @@
+import{ErrorHandler,Injectable,signal}from'@angular/core';
+@Injectable({providedIn:'root'})export class GlobalErrorHandler implements ErrorHandler{readonly lastError=signal<string|null>(null);handleError(error:unknown){const message=error instanceof Error?error.message:'An unexpected application error occurred';this.lastError.set(message);console.error('[AirOps application error]',error);setTimeout(()=>this.lastError.set(null),6000)}}

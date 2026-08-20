@@ -1,0 +1,162 @@
+<main>
+  <header>
+    <a routerLink="/disruptions">← All disruptions</a><span><i></i> Impact engine online</span>
+  </header>
+  @if (disruption(); as d) {
+    <section class="hero">
+      <p>DISRUPTION MANAGEMENT / {{ d.id }}</p>
+      <div>
+        <span class="icon">!</span>
+        <div>
+          <em>{{ d.severity }} SEVERITY · {{ d.status }}</em>
+          <h1>{{ d.type }}</h1>
+          <b>{{ d.airport }} · Primary flight {{ d.primaryFlight }} · Started {{ d.startedAt }}</b>
+        </div>
+        <button (click)="resolve()">Mark resolved</button>
+      </div>
+    </section>
+    <section class="content">
+      <div class="metrics">
+        <article>
+          <small>AFFECTED FLIGHTS</small><strong>{{ d.impact.affectedFlights }}</strong
+          ><span>aircraft rotation</span>
+        </article>
+        <article>
+          <small>PASSENGERS</small><strong>{{ d.impact.affectedPassengers }}</strong
+          ><span>{{ d.impact.missedConnections }} missed connections</span>
+        </article>
+        <article>
+          <small>RECOVERY TIME</small><strong>{{ d.impact.recoveryMinutes }} min</strong
+          ><span>estimated stabilization</span>
+        </article>
+        <article>
+          <small>ESTIMATED COST</small
+          ><strong>{{
+            d.impact.estimatedOperationalCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+          }}</strong
+          ><span>total operational impact</span>
+        </article>
+      </div>
+      <div class="columns">
+        <div>
+          <article>
+            <div class="head">
+              <div>
+                <h2>Network propagation</h2>
+                <p>Delay carried through the assigned aircraft rotation</p>
+              </div>
+            </div>
+            <div class="flow">
+              @for (f of d.impact.flights; track f.id; let last = $last) {
+                <div class="leg" [routerLink]="['/flights', f.id]">
+                  <span>{{ f.id }}</span>
+                  <div>
+                    <b>{{ f.route }}</b
+                    ><small>{{ f.reason }}</small>
+                  </div>
+                  <strong>+{{ f.propagatedDelay }} min</strong
+                  ><em>{{ f.passengers }} pax · {{ f.missedConnections }} missed</em>
+                </div>
+                @if (!last) {
+                  <div class="arrow">↓ <span>delay propagated to next rotation leg</span></div>
+                }
+              }
+            </div>
+          </article>
+          <article>
+            <div class="head">
+              <div>
+                <h2>Impact breakdown</h2>
+                <p>Calculated from passengers, delay duration, and operational constraints</p>
+              </div>
+            </div>
+            <div class="breakdown">
+              <div>
+                <span>♧</span><b>{{ d.impact.crewAffected }}</b
+                ><small>Crew affected</small>
+              </div>
+              <div>
+                <span>⌂</span><b>{{ d.impact.hotelRooms }}</b
+                ><small>Hotel rooms</small>
+              </div>
+              <div>
+                <span>☕</span><b>{{ d.impact.mealVouchers }}</b
+                ><small>Meal vouchers</small>
+              </div>
+              <div>
+                <span>↔</span><b>{{ d.impact.gateConflicts }}</b
+                ><small>Gate conflicts</small>
+              </div>
+              <div>
+                <span>$</span
+                ><b>{{
+                  d.impact.estimatedCompensation | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+                }}</b
+                ><small>Compensation</small>
+              </div>
+            </div>
+          </article>
+          <article>
+            <div class="head"><div><h2>Passenger connections</h2><p>Minimum connection time compared with propagated arrival</p></div></div>
+            <div class="constraint-list">
+              @for (connection of d.impact.connections; track connection.inboundFlight + connection.outboundFlight) {
+                <div><span>♧</span><b>{{ connection.inboundFlight }} → {{ connection.outboundFlight }}</b><small>{{ connection.connectionAirport }} · {{ connection.passengers }} passengers</small><em>{{ connection.availableConnectionMinutes }} min available / {{ connection.minimumConnectionMinutes }} required</em><strong class="{{ connection.status.toLowerCase().replace(' ', '-') }}">{{ connection.status }}</strong></div>
+              }
+            </div>
+          </article>
+          <article>
+            <div class="head"><div><h2>Operational constraints</h2><p>Gate occupancy and crew legality checks</p></div></div>
+            <div class="constraints">
+              <section><h3>Gate conflicts</h3>@for (gate of d.impact.gateDetails; track gate.gate + gate.incomingFlight) {<div><span>↔</span><b>{{ gate.airport }} · Gate {{ gate.gate }}</b><small>{{ gate.incomingFlight }} overlaps {{ gate.occupyingFlight }} by {{ gate.overlapMinutes }} min</small><em>{{ gate.severity }}</em></div>} @empty {<p>No gate conflicts detected.</p>}</section>
+              <section><h3>Crew duty limits</h3>@for (crew of d.impact.crewDetails; track crew.crewId) {<div><span>♧</span><b>{{ crew.crewId }} · {{ crew.flightId }}</b><small>{{ crew.projectedDutyMinutes }} / {{ crew.legalLimitMinutes }} duty minutes</small><em>{{ crew.status }}</em></div>}</section>
+            </div>
+          </article>
+          <article>
+            <div class="head"><div><h2>Audit history</h2><p>Controller actions and field-level network changes</p></div></div>
+            <div class="audit-list">
+              @for (entry of audit(); track entry.id) {
+                <section><div class="audit-marker">{{ entry.action === 'Created' ? '+' : '✓' }}</div><div class="audit-summary"><span>{{ entry.action }} · {{ entry.timestamp | date: 'MMM d, HH:mm:ss' }}</span><h3>{{ entry.summary }}</h3><p>{{ entry.actor }} · {{ entry.changes.length }} state changes</p></div><details><summary>View changes</summary>@for (change of entry.changes; track change.entityType + change.entityId + change.field) {<div><b>{{ change.entityType }} {{ change.entityId }}</b><span>{{ change.field }}</span><em>{{ change.before }} → {{ change.after }}</em></div>}</details></section>
+              } @empty { <div class="audit-empty">This seeded disruption has no controller audit entries yet.</div> }
+            </div>
+          </article>
+        </div>
+        <aside>
+          <article>
+            <div class="head">
+              <div><h2>Disruption details</h2></div>
+            </div>
+            <dl>
+              <div>
+                <dt>Type</dt>
+                <dd>{{ d.type }}</dd>
+              </div>
+              <div>
+                <dt>Severity</dt>
+                <dd>{{ d.severity }}</dd>
+              </div>
+              <div>
+                <dt>Airport</dt>
+                <dd>{{ d.airport }}</dd>
+              </div>
+              <div>
+                <dt>Duration</dt>
+                <dd>{{ d.durationMinutes }} min</dd>
+              </div>
+              <div>
+                <dt>Primary flight</dt>
+                <dd>{{ d.primaryFlight }}</dd>
+              </div>
+            </dl>
+          </article>
+          <button>Generate recovery plans →</button>
+          <p>Recovery recommendation generation will be introduced in Phase 4.</p>
+        </aside>
+      </div>
+    </section>
+  } @else {
+    <div class="not-found">
+      <h2>Disruption not found</h2>
+      <a routerLink="/disruptions">Return to disruptions</a>
+    </div>
+  }
+</main>

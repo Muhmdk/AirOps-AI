@@ -1,0 +1,153 @@
+<div class="shell">
+  <aside>
+    <a class="brand" routerLink="/overview"><b>▰ AirOps</b><small>COMMAND CENTER</small></a>
+    <nav>
+      <small>NETWORK</small><a routerLink="/overview">⌁ <span>Overview</span></a
+      ><a routerLink="/flights">✈ <span>Flights</span></a
+      ><a class="active" routerLink="/disruptions">△ <span>Disruptions</span></a
+      ><a routerLink="/recovery-plans">◇ <span>Recovery plans</span></a
+      ><small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a
+      ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
+      ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
+    </nav>
+    <div class="system"><i></i><b>Impact engine online</b></div>
+  </aside>
+  <main>
+    <header>
+      <div>
+        <p>DISRUPTION MANAGEMENT / ACTIVE EVENTS</p>
+        <h1>Disruptions</h1>
+        <span>Investigate operational events and their network-wide impact.</span>
+      </div>
+      <div class="header-actions"><a routerLink="/disruptions/scenarios">◇ Scenario lab</a><button (click)="showCreate.set(true)">＋ Trigger disruption</button></div>
+    </header>
+    <section class="content">
+      <div class="metrics">
+        <article>
+          <small>ACTIVE DISRUPTIONS</small><b class="red">{{ engine.active().length }}</b
+          ><span>across the network</span>
+        </article>
+        <article>
+          <small>PASSENGERS AFFECTED</small><b>{{ engine.totalImpact().passengers | number }}</b
+          ><span>current active events</span>
+        </article>
+        <article>
+          <small>MISSED CONNECTIONS</small
+          ><b class="amber">{{ engine.totalImpact().connections }}</b
+          ><span>estimated impact</span>
+        </article>
+        <article>
+          <small>ESTIMATED COST</small
+          ><b>{{ engine.totalImpact().cost | currency: 'CAD' : 'symbol-narrow' : '1.0-0' }}</b
+          ><span>operational and passenger</span>
+        </article>
+      </div>
+      @if (engine.compoundImpacts().length) {
+        <div class="compound-alert"><span>⇄</span><div><b>Compound network impact detected</b><p>{{ engine.compoundImpacts().length }} overlapping disruption constraints are adding {{ engine.compoundImpacts()[0].additionalDelayMinutes }} delay minutes and {{ engine.compoundImpacts()[0].additionalPassengers }} affected passengers.</p></div><a routerLink="/disruptions/scenarios">Open stress analysis →</a></div>
+      }
+      <article class="panel">
+        <div class="toolbar">
+          <div>
+            @for (s of ['Active', 'Monitoring', 'Resolved', 'All']; track s) {
+              <button [class.active]="status() === s" (click)="status.set(s)">{{ s }}</button>
+            }
+          </div>
+          <span>{{ visible().length }} disruption records</span>
+        </div>
+        <div class="list">
+          @for (d of visible(); track d.id) {
+            <article tabindex="0" (click)="open(d)" (keydown.enter)="open(d)">
+              <div class="severity {{ d.severity.toLowerCase() }}">
+                {{ d.severity === 'Critical' ? '!' : '△' }}
+              </div>
+              <div class="identity">
+                <span>{{ d.id }} · {{ d.startedAt }}</span>
+                <h2>{{ d.type }}</h2>
+                <p>{{ d.description }}</p>
+              </div>
+              <div class="link">
+                <small>PRIMARY FLIGHT</small><b>{{ d.primaryFlight }}</b
+                ><span>{{ d.airport }}</span>
+              </div>
+              <div class="impact">
+                <small>NETWORK IMPACT</small
+                ><b
+                  >{{ d.impact.affectedFlights }} flights ·
+                  {{ d.impact.affectedPassengers }} passengers</b
+                ><span>{{ d.impact.missedConnections }} missed connections</span>
+              </div>
+              <div class="cost">
+                <small>EST. COST</small
+                ><b>{{
+                  d.impact.estimatedOperationalCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+                }}</b
+                ><span>{{ d.impact.recoveryMinutes }} min recovery</span>
+              </div>
+              <em class="state {{ d.status.toLowerCase() }}"><i></i>{{ d.status }}</em
+              ><strong>›</strong>
+            </article>
+          } @empty {
+            <div class="empty">
+              <span>✓</span>
+              <h2>No {{ status().toLowerCase() }} disruptions</h2>
+              <p>The simulated network has no matching disruption records.</p>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
+@if (showCreate()) {
+  <div class="scrim" (click)="showCreate.set(false)"></div>
+  <aside class="drawer">
+    <button class="close" (click)="showCreate.set(false)">×</button
+    ><small>SCENARIO SIMULATOR</small>
+    <h2>Trigger a disruption</h2>
+    <p>Create an operational event and calculate its downstream network impact.</p>
+    <form [formGroup]="form" (ngSubmit)="create()">
+      <label
+        >Disruption type<select formControlName="type">
+          @for (type of types; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select></label
+      >
+      <div class="row">
+        <label
+          >Severity<select formControlName="severity">
+            <option>Moderate</option>
+            <option>High</option>
+            <option>Critical</option>
+          </select></label
+        ><label
+          >Airport<select formControlName="airport">
+            <option>YYZ</option>
+            <option>YUL</option>
+            <option>YVR</option>
+            <option>YYC</option>
+          </select></label
+        >
+      </div>
+      <label
+        >Primary flight<select formControlName="flightId">
+          @for (f of flights; track f.id) {
+            <option [value]="f.id">{{ f.id }} · {{ f.route }}</option>
+          }
+        </select></label
+      ><label
+        >Expected duration<input type="number" formControlName="durationMinutes" /><span
+          >minutes</span
+        ></label
+      >
+      <div class="preview">
+        <b>What happens next</b>
+        <p>
+          The engine will calculate propagated aircraft delays, passenger connections, crew impact,
+          gate conflicts, recovery time, and estimated cost.
+        </p>
+      </div>
+      <button type="submit" [disabled]="form.invalid">Trigger and calculate impact →</button>
+    </form>
+  </aside>
+}
