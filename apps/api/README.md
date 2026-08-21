@@ -18,6 +18,12 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `GET /api/aircraft`
 - `GET /api/aircraft/{registration}`
 - `GET /api/network/summary`
+- `GET /api/operations/events`
+- `GET /api/simulation/clock`
+- `POST /api/simulation/clock/start`
+- `POST /api/simulation/clock/pause`
+- `POST /api/simulation/clock/advance`
+- `POST /api/simulation/clock/reset`
 
 Flight list query parameters:
 
@@ -26,6 +32,8 @@ Flight list query parameters:
 - `minRisk`: inclusive risk threshold from 0 to 100
 
 Airport queries support `search` and `risk`. Aircraft queries support `search`, `status`, and `family`.
+
+Operational events support `severity`, `category`, and `limit` filters. The simulation clock starts paused at the deterministic demonstration time. Manual advancement and the five-second background ticker publish flight-departure milestones exactly once.
 
 ## Test
 

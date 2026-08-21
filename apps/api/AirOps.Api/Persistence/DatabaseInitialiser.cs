@@ -1,3 +1,4 @@
+using AirOps.Api.Modules.Operations;
 using Microsoft.EntityFrameworkCore;
 
 namespace AirOps.Api.Persistence;
@@ -20,6 +21,10 @@ public static class DatabaseInitialiser
             database.Airports.AddRange(AirportSeed.All);
         if (!await database.Aircraft.AnyAsync())
             database.Aircraft.AddRange(AircraftSeed.All);
+        if (!await database.OperationalEvents.AnyAsync())
+            database.OperationalEvents.AddRange(OperationalEventSeed.All);
+        if (!await database.SimulationClocks.AnyAsync())
+            database.SimulationClocks.Add(new SimulationClockState(DateTimeOffset.UtcNow));
         await database.SaveChangesAsync();
     }
 }

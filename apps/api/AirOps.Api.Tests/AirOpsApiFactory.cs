@@ -14,6 +14,7 @@ public sealed class AirOpsApiFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<AirOpsDbContext>>();

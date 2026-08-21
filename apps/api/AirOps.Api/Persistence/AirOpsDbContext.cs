@@ -1,6 +1,7 @@
 using AirOps.Api.Modules.Aircraft;
 using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Flights;
+using AirOps.Api.Modules.Operations;
 using Microsoft.EntityFrameworkCore;
 
 namespace AirOps.Api.Persistence;
@@ -10,6 +11,8 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
     public DbSet<Flight> Flights => Set<Flight>();
     public DbSet<Airport> Airports => Set<Airport>();
     public DbSet<Aircraft> Aircraft => Set<Aircraft>();
+    public DbSet<OperationalEvent> OperationalEvents => Set<OperationalEvent>();
+    public DbSet<SimulationClockState> SimulationClocks => Set<SimulationClockState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,5 +87,33 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
         aircraft.HasIndex(item => item.Status);
         aircraft.HasIndex(item => item.Family);
         aircraft.HasIndex(item => item.Location);
+
+        var operationalEvent = modelBuilder.Entity<OperationalEvent>();
+        operationalEvent.ToTable("operational_events");
+        operationalEvent.HasKey(item => item.Id);
+        operationalEvent.Property(item => item.Id).HasColumnName("id");
+        operationalEvent.Property(item => item.OccurredAt).HasColumnName("occurred_at");
+        operationalEvent.Property(item => item.Type).HasColumnName("type").HasConversion<string>().HasMaxLength(20);
+        operationalEvent.Property(item => item.Title).HasColumnName("title").HasMaxLength(160);
+        operationalEvent.Property(item => item.Detail).HasColumnName("detail").HasMaxLength(300);
+        operationalEvent.Property(item => item.Accent).HasColumnName("accent").HasMaxLength(20);
+        operationalEvent.Property(item => item.Severity).HasColumnName("severity").HasConversion<string>().HasMaxLength(20);
+        operationalEvent.Property(item => item.EntityType).HasColumnName("entity_type").HasMaxLength(20);
+        operationalEvent.Property(item => item.EntityId).HasColumnName("entity_id").HasMaxLength(40);
+        operationalEvent.Property(item => item.Category).HasColumnName("category").HasConversion<string>().HasMaxLength(20);
+        operationalEvent.Property(item => item.EventKey).HasColumnName("event_key").HasMaxLength(160);
+        operationalEvent.HasIndex(item => item.OccurredAt);
+        operationalEvent.HasIndex(item => item.Severity);
+        operationalEvent.HasIndex(item => item.Category);
+        operationalEvent.HasIndex(item => item.EventKey).IsUnique();
+
+        var clock = modelBuilder.Entity<SimulationClockState>();
+        clock.ToTable("simulation_clock");
+        clock.HasKey(item => item.Id);
+        clock.Property(item => item.Id).HasColumnName("id").ValueGeneratedNever();
+        clock.Property(item => item.CurrentTime).HasColumnName("current_time");
+        clock.Property(item => item.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20);
+        clock.Property(item => item.MinutesPerTick).HasColumnName("minutes_per_tick");
+        clock.Property(item => item.UpdatedAt).HasColumnName("updated_at");
     }
 }

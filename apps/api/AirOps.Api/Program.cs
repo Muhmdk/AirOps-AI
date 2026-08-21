@@ -3,6 +3,7 @@ using AirOps.Api.Modules.Aircraft;
 using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Network;
+using AirOps.Api.Modules.Operations;
 using AirOps.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,11 @@ builder.Services.AddDbContext<AirOpsDbContext>(options =>
 builder.Services.AddScoped<IFlightRepository, EfFlightRepository>();
 builder.Services.AddScoped<IAirportRepository, EfAirportRepository>();
 builder.Services.AddScoped<IAircraftRepository, EfAircraftRepository>();
+builder.Services.AddScoped<IOperationalEventRepository, EfOperationalEventRepository>();
+builder.Services.AddScoped<SimulationClockService>();
+builder.Services.AddSingleton(TimeProvider.System);
+if (!builder.Environment.IsEnvironment("Testing"))
+    builder.Services.AddHostedService<SimulationClockWorker>();
 builder.Services.AddCors(options =>
     options.AddPolicy("AngularDevelopment", policy =>
         policy.WithOrigins("http://localhost:4200")
@@ -39,6 +45,7 @@ app.MapFlightEndpoints();
 app.MapAirportEndpoints();
 app.MapAircraftEndpoints();
 app.MapNetworkEndpoints();
+app.MapOperationsEndpoints();
 
 app.Run();
 

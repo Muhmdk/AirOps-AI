@@ -131,6 +131,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Persistent airport operations and aircraft fleet modules
 - Searchable airport and aircraft collection/detail APIs
 - Network summary enriched with airport health and fleet availability
+- Persistent operational event history with severity and category filters
+- Controllable simulation clock with start, pause, advance, and reset operations
+- Background clock advancement and deterministic flight milestone generation
 
 ## Planned architecture
 
