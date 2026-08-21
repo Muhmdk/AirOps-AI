@@ -10,4 +10,8 @@ public sealed record NetworkSummaryResponse(
     int HighRisk,
     int Passengers,
     int ConnectingPassengers,
-    int NetworkHealth);
+    int NetworkHealth,
+    int AirportsMonitored,
+    int AirportAverageDelay,
+    int AircraftAvailable,
+    int AircraftUnavailable);

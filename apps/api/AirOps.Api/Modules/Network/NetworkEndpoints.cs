@@ -1,4 +1,6 @@
 using AirOps.Api.Contracts;
+using AirOps.Api.Modules.Aircraft;
+using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Flights;
 
 namespace AirOps.Api.Modules.Network;
@@ -15,10 +17,16 @@ public static class NetworkEndpoints
 
     private static async Task<NetworkSummaryResponse> GetSummary(
         IFlightRepository repository,
+        IAirportRepository airportRepository,
+        IAircraftRepository aircraftRepository,
         CancellationToken cancellationToken)
     {
         var flights = await repository.GetAllAsync(cancellationToken);
-        var averageRisk = flights.Count == 0 ? 0 : flights.Average(flight => flight.Risk);
+        var airports = await airportRepository.GetAllAsync(cancellationToken);
+        var aircraft = await aircraftRepository.GetAllAsync(cancellationToken);
+        var networkHealth = airports.Count == 0
+            ? 100
+            : (int)Math.Round(airports.Average(airport => airport.Health));
         return new NetworkSummaryResponse(
             FlightsToday: flights.Count,
             OnTime: flights.Count(flight => flight.Status == FlightStatus.OnTime),
@@ -29,6 +37,12 @@ public static class NetworkEndpoints
             HighRisk: flights.Count(flight => flight.Risk >= 70),
             Passengers: flights.Sum(flight => flight.Passengers),
             ConnectingPassengers: flights.Sum(flight => flight.ConnectingPassengers),
-            NetworkHealth: Math.Clamp((int)Math.Round(100 - averageRisk * 0.42), 0, 100));
+            NetworkHealth: Math.Clamp(networkHealth, 0, 100),
+            AirportsMonitored: airports.Count,
+            AirportAverageDelay: airports.Count == 0
+                ? 0
+                : (int)Math.Round(airports.Average(airport => airport.AverageDelay)),
+            AircraftAvailable: aircraft.Count(item => item.Status != AircraftStatus.Unavailable),
+            AircraftUnavailable: aircraft.Count(item => item.Status == AircraftStatus.Unavailable));
     }
 }

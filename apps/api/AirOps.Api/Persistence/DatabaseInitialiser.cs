@@ -14,10 +14,12 @@ public static class DatabaseInitialiser
         else
             await database.Database.EnsureCreatedAsync();
 
-        if (await database.Flights.AnyAsync())
-            return;
-
-        database.Flights.AddRange(FlightSeed.All);
+        if (!await database.Flights.AnyAsync())
+            database.Flights.AddRange(FlightSeed.All);
+        if (!await database.Airports.AnyAsync())
+            database.Airports.AddRange(AirportSeed.All);
+        if (!await database.Aircraft.AnyAsync())
+            database.Aircraft.AddRange(AircraftSeed.All);
         await database.SaveChangesAsync();
     }
 }

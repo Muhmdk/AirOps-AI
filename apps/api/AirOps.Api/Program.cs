@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using AirOps.Api.Modules.Aircraft;
+using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Network;
 using AirOps.Api.Persistence;
@@ -12,6 +14,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<AirOpsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("AirOps")));
 builder.Services.AddScoped<IFlightRepository, EfFlightRepository>();
+builder.Services.AddScoped<IAirportRepository, EfAirportRepository>();
+builder.Services.AddScoped<IAircraftRepository, EfAircraftRepository>();
 builder.Services.AddCors(options =>
     options.AddPolicy("AngularDevelopment", policy =>
         policy.WithOrigins("http://localhost:4200")
@@ -32,6 +36,8 @@ app.MapGet("/health", () => Results.Ok(new
     timestamp = DateTimeOffset.UtcNow,
 }));
 app.MapFlightEndpoints();
+app.MapAirportEndpoints();
+app.MapAircraftEndpoints();
 app.MapNetworkEndpoints();
 
 app.Run();

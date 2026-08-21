@@ -128,6 +128,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - PostgreSQL persistence through Entity Framework Core and Npgsql
 - Initial relational migration with indexed operational flight fields
 - Deterministic database seeding and local Docker Compose configuration
+- Persistent airport operations and aircraft fleet modules
+- Searchable airport and aircraft collection/detail APIs
+- Network summary enriched with airport health and fleet availability
 
 ## Planned architecture
 

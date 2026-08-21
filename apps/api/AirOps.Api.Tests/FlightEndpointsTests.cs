@@ -63,6 +63,9 @@ public sealed class FlightEndpointsTests : IClassFixture<AirOpsApiFactory>
         Assert.Equal(2, summary.HighRisk);
         Assert.Equal(1178, summary.Passengers);
         Assert.InRange(summary.NetworkHealth, 0, 100);
+        Assert.Equal(6, summary.AirportsMonitored);
+        Assert.Equal(5, summary.AircraftAvailable);
+        Assert.Equal(1, summary.AircraftUnavailable);
     }
 
     [Fact]
@@ -88,5 +91,7 @@ public sealed class FlightEndpointsTests : IClassFixture<AirOpsApiFactory>
 
         Assert.Equal(5, firstCount);
         Assert.Equal(firstCount, secondDatabase.Flights.Count());
+        Assert.Equal(6, secondDatabase.Airports.Count());
+        Assert.Equal(6, secondDatabase.Aircraft.Count());
     }
 }

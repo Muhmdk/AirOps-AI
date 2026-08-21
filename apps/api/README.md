@@ -13,6 +13,10 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `GET /health`
 - `GET /api/flights`
 - `GET /api/flights/{id}`
+- `GET /api/airports`
+- `GET /api/airports/{code}`
+- `GET /api/aircraft`
+- `GET /api/aircraft/{registration}`
 - `GET /api/network/summary`
 
 Flight list query parameters:
@@ -20,6 +24,8 @@ Flight list query parameters:
 - `search`: flight number, airport code, or city
 - `status`: `OnTime`, `Delayed`, `Boarding`, `AtRisk`, or `Cancelled`
 - `minRisk`: inclusive risk threshold from 0 to 100
+
+Airport queries support `search` and `risk`. Aircraft queries support `search`, `status`, and `family`.
 
 ## Test
 
