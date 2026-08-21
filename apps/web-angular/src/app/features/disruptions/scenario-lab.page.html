@@ -1,0 +1,139 @@
+<main>
+  <header>
+    <a routerLink="/disruptions">← Disruptions</a>
+    <div>
+      <span>SCENARIO SIMULATOR</span>
+      <h1>Scenario lab</h1>
+      <p>Run repeatable operational disruptions and compare network state before and after.</p>
+    </div>
+    <button (click)="confirmReset.set(true)">↺ Reset simulation</button>
+  </header>
+  <section class="content">
+    <div class="status">
+      <div>
+        <i></i
+        ><span
+          ><b>Simulation engine ready</b
+          ><small
+            >{{ engine.active().length }} active disruptions ·
+            {{ engine.scenarioRuns().length }} recorded runs</small
+          ></span
+        >
+      </div>
+      <button (click)="stress()" [disabled]="!!running()">{{ running() === 'stress' ? 'Running stress test…' : '⚡ Run network stress test' }}</button>
+      <a routerLink="/event-timeline">Open live event stream →</a>
+    </div>
+    <h2>Scenario presets</h2>
+    <div class="presets">
+      @for (preset of presets; track preset.name) {
+        <article>
+          <span class="preset-icon">{{ preset.icon }}</span>
+          <div class="severity {{ preset.scenario.severity.toLowerCase() }}">
+            {{ preset.scenario.severity }}
+          </div>
+          <h3>{{ preset.name }}</h3>
+          <p>{{ preset.description }}</p>
+          <dl>
+            <div>
+              <dt>Airport</dt>
+              <dd>{{ preset.scenario.airport }}</dd>
+            </div>
+            <div>
+              <dt>Primary flight</dt>
+              <dd>{{ preset.scenario.flightId }}</dd>
+            </div>
+            <div>
+              <dt>Duration</dt>
+              <dd>{{ preset.scenario.durationMinutes }} min</dd>
+            </div>
+          </dl>
+          <button [disabled]="!!running()" (click)="run(preset)">
+            {{ running() === preset.name ? 'Calculating impact…' : '▶ Run scenario' }}
+          </button>
+        </article>
+      }
+    </div>
+    <div class="history-head">
+      <div>
+        <h2>Run history</h2>
+        <p>Before-and-after snapshots for repeatable comparison</p>
+      </div>
+      <span>{{ engine.scenarioRuns().length }} runs</span>
+    </div>
+    @if (!engine.scenarioRuns().length) {
+      <div class="empty">
+        <span>◇</span>
+        <h3>No scenarios run yet</h3>
+        <p>Select a preset above to create the first deterministic snapshot.</p>
+      </div>
+    } @else {
+      <div class="runs">
+        @for (run of engine.scenarioRuns(); track run.id; let index = $index) {
+          <article>
+            <div class="run-title">
+              <span>{{ run.name.charAt(0) }}</span>
+              <div>
+                <small>{{ run.runAt | date: 'MMM d, HH:mm:ss' }}</small>
+                <h3>{{ run.name }}</h3>
+                <p>
+                  {{ run.disruptionId }} · {{ run.scenario.airport }} · {{ run.scenario.flightId }}
+                </p>
+              </div>
+              <a [routerLink]="['/disruptions', run.disruptionId]">Open impact →</a>
+            </div>
+            <div class="comparison">
+              <div class="labels"><span></span><b>BEFORE</b><b>AFTER</b><em>CHANGE</em></div>
+              <div>
+                <span>Network health</span><b>{{ run.before.networkHealth }}</b
+                ><b>{{ run.after.networkHealth }}</b
+                ><em>{{ run.after.networkHealth - run.before.networkHealth }}</em>
+              </div>
+              <div>
+                <span>Flights at risk</span><b>{{ run.before.atRiskFlights }}</b
+                ><b>{{ run.after.atRiskFlights }}</b
+                ><em>+{{ run.after.atRiskFlights - run.before.atRiskFlights }}</em>
+              </div>
+              <div>
+                <span>Affected passengers</span><b>{{ run.before.affectedPassengers }}</b
+                ><b>{{ run.after.affectedPassengers }}</b
+                ><em>+{{ run.after.affectedPassengers - run.before.affectedPassengers }}</em>
+              </div>
+              <div>
+                <span>Available aircraft</span><b>{{ run.before.availableAircraft }}</b
+                ><b>{{ run.after.availableAircraft }}</b
+                ><em>{{ run.after.availableAircraft - run.before.availableAircraft }}</em>
+              </div>
+              <div>
+                <span>Estimated cost</span
+                ><b>{{ run.before.estimatedCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0' }}</b
+                ><b>{{ run.after.estimatedCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0' }}</b
+                ><em
+                  >+{{
+                    run.after.estimatedCost - run.before.estimatedCost
+                      | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+                  }}</em
+                >
+              </div>
+            </div>
+            <button class="replay" (click)="replay(index)">↻ Replay with same inputs</button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</main>
+@if (confirmReset()) {
+  <div class="scrim" (click)="confirmReset.set(false)"></div>
+  <div class="confirm">
+    <span>↺</span>
+    <h2>Reset the simulation?</h2>
+    <p>
+      This removes all disruptions, audit records, and scenario history, then restores the clean
+      baseline network.
+    </p>
+    <div>
+      <button (click)="confirmReset.set(false)">Cancel</button
+      ><button (click)="reset()">Reset everything</button>
+    </div>
+  </div>
+}

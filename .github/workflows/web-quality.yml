@@ -1,0 +1,36 @@
+name: Web quality
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web-angular/**'
+      - '.github/workflows/web-quality.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web-angular/**'
+      - '.github/workflows/web-quality.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-angular
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.16.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/web-angular/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec ng test --watch=false
+      - run: pnpm exec ng build

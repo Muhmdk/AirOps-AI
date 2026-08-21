@@ -1,0 +1,210 @@
+<main>
+  <header>
+    <a routerLink="/recovery-plans">← Recovery plans</a
+    ><span><i></i> Recommendation engine online</span>
+  </header>
+  @if (disruption(); as d) {
+    <section class="hero">
+      <p>RECOVERY MANAGEMENT / {{ d.id }} / PLAN COMPARISON</p>
+      <div>
+        <div>
+          <span class="severity">{{ d.severity }} disruption</span>
+          <h1>Recovery options for {{ d.primaryFlight }}</h1>
+          <b
+            >{{ d.type }} · {{ d.airport }} · {{ d.impact.affectedPassengers }} passengers
+            affected</b
+          >
+        </div>
+        <a [routerLink]="['/disruptions', d.id]">View disruption impact →</a>
+      </div>
+    </section>
+    <section class="content">
+      <div class="context">
+        <div>
+          <small>CURRENT EXPECTED DELAY</small><b>{{ d.impact.flights[0].propagatedDelay }} min</b>
+        </div>
+        <div>
+          <small>MISSED CONNECTIONS</small><b>{{ d.impact.missedConnections }}</b>
+        </div>
+        <div>
+          <small>NO-ACTION COST</small
+          ><b>{{
+            d.impact.estimatedOperationalCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+          }}</b>
+        </div>
+        <div>
+          <small>RECOVERY WINDOW</small><b>{{ d.impact.recoveryMinutes }} min</b>
+        </div>
+      </div>
+      <div class="explanation">
+        <span>◇</span>
+        <div>
+          <b>How plans are scored</b>
+          <p>
+            Delay 30% · Passenger connections 30% · Cost 25% · Operational risk 15%. Higher is
+            better.
+          </p>
+        </div>
+      </div>
+      @if (approvedOutcome(); as outcome) {
+        <article class="outcome" data-cy="recovery-outcome">
+          <div class="outcome-title">
+            <span>✓</span>
+            <div>
+              <small>RECOVERY EXECUTED</small>
+              <h2>Measured network outcome</h2>
+              <p>{{ outcome.actor }} approved this action · {{ outcome.timestamp | date: 'MMM d, HH:mm' }}</p>
+            </div>
+            <a routerLink="/recovery-plans">Open decision log →</a>
+          </div>
+          <div class="outcome-grid">
+            <div><small>MEASURE</small><b>BEFORE</b><b>AFTER</b><em>IMPROVEMENT</em></div>
+            <div><span>Expected delay</span><b>{{ outcome.outcome.delayBefore }} min</b><b>{{ outcome.outcome.delayAfter }} min</b><em>{{ outcome.outcome.delayBefore - outcome.outcome.delayAfter }} min saved</em></div>
+            <div><span>Missed connections</span><b>{{ outcome.outcome.missedBefore }}</b><b>{{ outcome.outcome.missedAfter }}</b><em>{{ outcome.outcome.missedBefore - outcome.outcome.missedAfter }} protected</em></div>
+            <div><span>Estimated cost</span><b>{{ outcome.outcome.costBefore | currency: 'CAD':'symbol-narrow':'1.0-0' }}</b><b>{{ outcome.outcome.costAfter | currency: 'CAD':'symbol-narrow':'1.0-0' }}</b><em>{{ outcome.outcome.costBefore - outcome.outcome.costAfter | currency: 'CAD':'symbol-narrow':'1.0-0' }} saved</em></div>
+          </div>
+        </article>
+      }
+      <div class="plans">
+        @for (plan of plans(); track plan.id; let index = $index) {
+          <article [class.recommended]="plan.recommended">
+            <div class="rank">#{{ index + 1 }}</div>
+            @if (plan.recommended) {
+              <span class="recommended-badge">★ RECOMMENDED</span>
+            }
+            <div class="score">
+              <svg viewBox="0 0 42 42">
+                <circle cx="21" cy="21" r="17"></circle>
+                <circle
+                  class="value"
+                  cx="21"
+                  cy="21"
+                  r="17"
+                  [style.stroke-dasharray]="plan.score + ', 100'"
+                ></circle></svg
+              ><b>{{ plan.score }}</b
+              ><small>SCORE</small>
+            </div>
+            <small>{{ plan.action.toUpperCase() }}</small>
+            <h2>{{ plan.name }}</h2>
+            <p>{{ plan.description }}</p>
+            <div class="metrics">
+              <div>
+                <span>EXPECTED DELAY</span><b>{{ plan.expectedDelayMinutes }} min</b
+                ><em
+                  [class.better]="plan.expectedDelayMinutes < d.impact.flights[0].propagatedDelay"
+                  >{{ plan.expectedDelayMinutes - d.impact.flights[0].propagatedDelay }} min</em
+                >
+              </div>
+              <div>
+                <span>MISSED CONNECTIONS</span><b>{{ plan.missedConnections }}</b
+                ><em class="better">{{ plan.missedConnections - d.impact.missedConnections }}</em>
+              </div>
+              <div>
+                <span>ESTIMATED COST</span
+                ><b>{{ plan.estimatedCost | currency: 'CAD' : 'symbol-narrow' : '1.0-0' }}</b
+                ><em [class.better]="plan.estimatedCost < d.impact.estimatedOperationalCost">{{
+                  plan.estimatedCost - d.impact.estimatedOperationalCost
+                    | currency: 'CAD' : 'symbol-narrow' : '1.0-0'
+                }}</em>
+              </div>
+              <div>
+                <span>OPERATIONAL RISK</span
+                ><b class="risk {{ plan.operationalRisk.toLowerCase() }}">{{
+                  plan.operationalRisk
+                }}</b>
+              </div>
+            </div>
+            <button class="details" (click)="expanded.set(expanded() === plan.id ? '' : plan.id)">
+              {{ expanded() === plan.id ? 'Hide' : 'View' }} advantages and risks
+            </button>
+            @if (expanded() === plan.id) {
+              <div class="pros-cons">
+                <div>
+                  <b>Advantages</b>
+                  @for (item of plan.advantages; track item) {
+                    <p>✓ {{ item }}</p>
+                  }
+                </div>
+                <div>
+                  <b>Disadvantages</b>
+                  @for (item of plan.disadvantages; track item) {
+                    <p>! {{ item }}</p>
+                  }
+                </div>
+              </div>
+            }
+            <div class="plan-actions">
+              <button class="select" [class.primary]="plan.recommended" [disabled]="plan.status !== 'Proposed'" (click)="openDecision(plan, 'approve')" data-cy="approve-plan">
+                {{ plan.status === 'Proposed' ? 'Approve' : plan.status }} <span>→</span>
+              </button>
+              <button class="reject" [disabled]="plan.status !== 'Proposed'" (click)="openDecision(plan, 'reject')" data-cy="reject-plan">Reject</button>
+            </div>
+          </article>
+        } @empty {
+          <div class="plans-empty"><b>No recovery candidates available</b><p>Confirm that compatible aircraft and gate data are available, then retry.</p></div>
+        }
+      </div>
+      <article class="matrix">
+        <div class="matrix-head">
+          <div>
+            <h2>Score breakdown</h2>
+            <p>Weighted comparison across decision criteria</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>PLAN</th>
+              <th>DELAY · 30%</th>
+              <th>PASSENGERS · 30%</th>
+              <th>COST · 25%</th>
+              <th>RISK · 15%</th>
+              <th>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (plan of plans(); track plan.id) {
+              <tr>
+                <td>
+                  <b>{{ plan.name }}</b>
+                </td>
+                <td>{{ plan.scoreBreakdown.delay }}</td>
+                <td>{{ plan.scoreBreakdown.passengers }}</td>
+                <td>{{ plan.scoreBreakdown.cost }}</td>
+                <td>{{ plan.scoreBreakdown.risk }}</td>
+                <td>
+                  <strong>{{ plan.score }}</strong>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </article>
+    </section>
+  } @else {
+    <div class="not-found">
+      <h2>Disruption not found</h2>
+      <a routerLink="/recovery-plans">Return to recovery plans</a>
+    </div>
+  }
+</main>
+@if (selected(); as plan) {
+  <div class="scrim" (click)="closeDecision()"></div>
+  <aside class="approval" [class.rejecting]="decisionMode() === 'reject'">
+    <button class="close" (click)="closeDecision()">×</button>
+    <small>{{ decisionMode() === 'approve' ? 'RECOVERY AUTHORIZATION' : 'RECOVERY DECISION' }}</small>
+    <h2>{{ decisionMode() === 'approve' ? 'Approve' : 'Reject' }} {{ plan.name }}?</h2>
+    <p>{{ decisionMode() === 'approve' ? 'This action will resolve ' + plan.disruptionId + ', reject the other candidates, and update the simulated network.' : 'The disruption will remain active and the next highest-scoring proposed plan will be recommended.' }}</p>
+    <div class="approval-summary"><div><span>Expected delay</span><b>{{ plan.expectedDelayMinutes }} min</b></div><div><span>Missed connections</span><b>{{ plan.missedConnections }}</b></div><div><span>Estimated cost</span><b>{{ plan.estimatedCost | currency: 'CAD':'symbol-narrow':'1.0-0' }}</b></div><div><span>Operational risk</span><b>{{ plan.operationalRisk }}</b></div></div>
+    @if(decisionMode() === 'approve' && recovery.requiresSupervisor(plan)){<label class="supervisor"><input type="checkbox" [ngModel]="supervisorOverride()" (ngModelChange)="supervisorOverride.set($event)"><span><b>Supervisor authorization</b><small>Required because this plan has high risk or exceeds the cost threshold.</small></span></label>}
+    <label class="notes">Decision notes<textarea data-cy="decision-notes" [ngModel]="notes()" (ngModelChange)="notes.set($event)" [placeholder]="decisionMode() === 'approve' ? 'Reason for selecting this recovery action…' : 'Reason this recovery action is not suitable…'"></textarea></label>
+    @if(approvalError()){<div class="approval-error">! {{approvalError()}}</div>}
+    @if(decisionMode() === 'approve'){
+      <button class="approve" data-cy="confirm-approval" (click)="approve()">Approve and execute plan →</button>
+    } @else {
+      <button class="approve reject-confirm" data-cy="confirm-rejection" (click)="reject()">Reject plan →</button>
+    }
+    <p class="legal">Recorded as {{supervisorOverride()?'Alex Morgan · Operations Supervisor':'Maya Chen · Operations Controller'}}</p>
+  </aside>
+}
