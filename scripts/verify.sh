@@ -12,6 +12,12 @@ if [[ -f "$api_tests" ]]; then
   fi
   echo "Running ASP.NET Core API tests..."
   dotnet test "$api_tests" --nologo
+  echo "Checking Entity Framework migration alignment..."
+  dotnet tool restore
+  dotnet ef migrations has-pending-model-changes \
+    --project "$repo_root/apps/api/AirOps.Api/AirOps.Api.csproj" \
+    --startup-project "$repo_root/apps/api/AirOps.Api/AirOps.Api.csproj" \
+    --no-build
 fi
 
 if [[ -f "$web_dir/pnpm-lock.yaml" ]] && command -v pnpm >/dev/null 2>&1; then

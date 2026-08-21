@@ -125,6 +125,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Search, status, and disruption-risk flight filters
 - Repository abstraction ready for PostgreSQL persistence
 - Integration tests using an in-process API host
+- PostgreSQL persistence through Entity Framework Core and Npgsql
+- Initial relational migration with indexed operational flight fields
+- Deterministic database seeding and local Docker Compose configuration
 
 ## Planned architecture
 

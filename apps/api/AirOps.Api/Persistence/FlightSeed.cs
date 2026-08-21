@@ -1,11 +1,13 @@
-namespace AirOps.Api.Modules.Flights;
+using AirOps.Api.Modules.Flights;
 
-public sealed class SeededFlightRepository : IFlightRepository
+namespace AirOps.Api.Persistence;
+
+public static class FlightSeed
 {
     private static readonly DateTimeOffset OperationDate =
-        new(2026, 8, 6, 0, 0, 0, TimeSpan.FromHours(-4));
+        new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.FromHours(-4)).ToUniversalTime();
 
-    private readonly IReadOnlyList<Flight> flights =
+    public static IReadOnlyList<Flight> All { get; } =
     [
         Create("AC103", "YYZ", "Toronto", "YVR", "Vancouver", 9, 15, 11, 28,
             "C-FVLX", "Boeing 787-9", "D24", FlightStatus.AtRisk, 82, 68, 286, 47,
@@ -23,11 +25,6 @@ public sealed class SeededFlightRepository : IFlightRepository
             "C-FITL", "Boeing 777-300ER", "E73", FlightStatus.OnTime, 18, 0, 356, 64,
             "Normal operations"),
     ];
-
-    public IReadOnlyList<Flight> GetAll() => flights;
-
-    public Flight? GetById(string id) => flights.FirstOrDefault(flight =>
-        string.Equals(flight.Id, id, StringComparison.OrdinalIgnoreCase));
 
     private static Flight Create(
         string id,
@@ -49,26 +46,13 @@ public sealed class SeededFlightRepository : IFlightRepository
         int connectingPassengers,
         string riskLabel)
     {
-        var arrivalDayOffset = arrivalHour >= 24 ? 1 : 0;
-        var arrival = OperationDate.AddDays(arrivalDayOffset)
+        var arrival = OperationDate.AddDays(arrivalHour >= 24 ? 1 : 0)
             .AddHours(arrivalHour % 24)
             .AddMinutes(arrivalMinute);
         return new Flight(
-            id,
-            originCode,
-            origin,
-            destinationCode,
-            destination,
-            OperationDate.AddHours(departureHour).AddMinutes(departureMinute),
-            arrival,
-            aircraftRegistration,
-            aircraftType,
-            gate,
-            status,
-            risk,
-            delayMinutes,
-            passengers,
-            connectingPassengers,
-            riskLabel);
+            id, originCode, origin, destinationCode, destination,
+            OperationDate.AddHours(departureHour).AddMinutes(departureMinute), arrival,
+            aircraftRegistration, aircraftType, gate, status, risk, delayMinutes,
+            passengers, connectingPassengers, riskLabel);
     }
 }

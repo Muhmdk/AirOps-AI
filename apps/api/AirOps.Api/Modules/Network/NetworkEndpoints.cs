@@ -13,9 +13,11 @@ public static class NetworkEndpoints
         return endpoints;
     }
 
-    private static NetworkSummaryResponse GetSummary(IFlightRepository repository)
+    private static async Task<NetworkSummaryResponse> GetSummary(
+        IFlightRepository repository,
+        CancellationToken cancellationToken)
     {
-        var flights = repository.GetAll();
+        var flights = await repository.GetAllAsync(cancellationToken);
         var averageRisk = flights.Count == 0 ? 0 : flights.Average(flight => flight.Risk);
         return new NetworkSummaryResponse(
             FlightsToday: flights.Count,

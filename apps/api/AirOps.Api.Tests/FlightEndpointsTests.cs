@@ -1,16 +1,19 @@
 using System.Net;
 using System.Net.Http.Json;
 using AirOps.Api.Contracts;
-using Microsoft.AspNetCore.Mvc.Testing;
+using AirOps.Api.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AirOps.Api.Tests;
 
-public sealed class FlightEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class FlightEndpointsTests : IClassFixture<AirOpsApiFactory>
 {
     private readonly HttpClient client;
+    private readonly AirOpsApiFactory factory;
 
-    public FlightEndpointsTests(WebApplicationFactory<Program> factory)
+    public FlightEndpointsTests(AirOpsApiFactory factory)
     {
+        this.factory = factory;
         client = factory.CreateClient();
     }
 
@@ -68,5 +71,22 @@ public sealed class FlightEndpointsTests : IClassFixture<WebApplicationFactory<P
         var response = await client.GetAsync("/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SeededOperationPersistsAcrossDatabaseScopes()
+    {
+        int firstCount;
+        await using (var firstScope = factory.Services.CreateAsyncScope())
+        {
+            var firstDatabase = firstScope.ServiceProvider.GetRequiredService<AirOpsDbContext>();
+            firstCount = firstDatabase.Flights.Count();
+        }
+
+        await using var secondScope = factory.Services.CreateAsyncScope();
+        var secondDatabase = secondScope.ServiceProvider.GetRequiredService<AirOpsDbContext>();
+
+        Assert.Equal(5, firstCount);
+        Assert.Equal(firstCount, secondDatabase.Flights.Count());
     }
 }

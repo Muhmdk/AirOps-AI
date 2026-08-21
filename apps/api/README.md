@@ -27,4 +27,28 @@ Flight list query parameters:
 dotnet test apps/api/AirOps.Api.Tests/AirOps.Api.Tests.csproj
 ```
 
-PostgreSQL will replace `SeededFlightRepository` in the next backend feature without changing endpoint contracts.
+## PostgreSQL
+
+Start the local database:
+
+```bash
+docker compose up -d postgres
+dotnet run --project apps/api/AirOps.Api
+```
+
+PostgreSQL is published on host port `5433` to avoid colliding with a default local PostgreSQL installation.
+
+The API applies pending Entity Framework migrations at startup and inserts the deterministic five-flight dataset only when the table is empty. Override the development connection with the `ConnectionStrings__AirOps` environment variable.
+
+Restore the repository-local Entity Framework tool before creating future migrations:
+
+```bash
+dotnet tool restore
+dotnet ef migrations add MigrationName --project apps/api/AirOps.Api
+```
+
+```bash
+docker compose down
+```
+
+Add `-v` only when you intentionally want to remove the persisted development database.

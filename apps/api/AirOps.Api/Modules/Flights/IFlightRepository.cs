@@ -2,6 +2,11 @@ namespace AirOps.Api.Modules.Flights;
 
 public interface IFlightRepository
 {
-    IReadOnlyList<Flight> GetAll();
-    Flight? GetById(string id);
+    Task<IReadOnlyList<Flight>> SearchAsync(
+        string? search,
+        FlightStatus? status,
+        int? minRisk,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<Flight>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Flight?> GetByIdAsync(string id, CancellationToken cancellationToken);
 }

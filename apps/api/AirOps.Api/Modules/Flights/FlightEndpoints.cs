@@ -14,11 +14,12 @@ public static class FlightEndpoints
         return endpoints;
     }
 
-    private static IResult GetFlights(
+    private static async Task<IResult> GetFlights(
         IFlightRepository repository,
         string? search,
         FlightStatus? status,
-        int? minRisk)
+        int? minRisk,
+        CancellationToken cancellationToken)
     {
         if (minRisk is < 0 or > 100)
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -26,32 +27,17 @@ public static class FlightEndpoints
                 [nameof(minRisk)] = ["Minimum risk must be between 0 and 100."],
             });
 
-        IEnumerable<Flight> flights = repository.GetAll();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim();
-            flights = flights.Where(flight =>
-                flight.Id.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                flight.OriginCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                flight.DestinationCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                flight.Origin.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                flight.Destination.Contains(term, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (status is not null)
-            flights = flights.Where(flight => flight.Status == status);
-        if (minRisk is not null)
-            flights = flights.Where(flight => flight.Risk >= minRisk);
-
-        return Results.Ok(flights
-            .OrderByDescending(flight => flight.Risk)
-            .Select(flight => flight.ToResponse()));
+        var flights = await repository.SearchAsync(
+            search, status, minRisk, cancellationToken);
+        return Results.Ok(flights.Select(flight => flight.ToResponse()));
     }
 
-    private static IResult GetFlight(string id, IFlightRepository repository)
+    private static async Task<IResult> GetFlight(
+        string id,
+        IFlightRepository repository,
+        CancellationToken cancellationToken)
     {
-        var flight = repository.GetById(id);
+        var flight = await repository.GetByIdAsync(id, cancellationToken);
         return flight is null
             ? Results.NotFound(new { message = $"Flight '{id}' was not found." })
             : Results.Ok(flight.ToResponse());

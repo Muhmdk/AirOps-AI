@@ -1,13 +1,17 @@
 using System.Text.Json.Serialization;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Network;
+using AirOps.Api.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
-builder.Services.AddSingleton<IFlightRepository, SeededFlightRepository>();
+builder.Services.AddDbContext<AirOpsDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("AirOps")));
+builder.Services.AddScoped<IFlightRepository, EfFlightRepository>();
 builder.Services.AddCors(options =>
     options.AddPolicy("AngularDevelopment", policy =>
         policy.WithOrigins("http://localhost:4200")
@@ -15,6 +19,8 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()));
 
 var app = builder.Build();
+
+await app.Services.InitialiseDatabaseAsync();
 
 app.UseExceptionHandler();
 app.UseCors("AngularDevelopment");

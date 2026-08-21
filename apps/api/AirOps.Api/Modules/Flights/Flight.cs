@@ -9,24 +9,62 @@ public enum FlightStatus
     Cancelled,
 }
 
-public sealed record Flight(
-    string Id,
-    string OriginCode,
-    string Origin,
-    string DestinationCode,
-    string Destination,
-    DateTimeOffset ScheduledDeparture,
-    DateTimeOffset ScheduledArrival,
-    string AircraftRegistration,
-    string AircraftType,
-    string Gate,
-    FlightStatus Status,
-    int Risk,
-    int DelayMinutes,
-    int Passengers,
-    int ConnectingPassengers,
-    string RiskLabel)
+public sealed class Flight
 {
+    private Flight() { }
+
+    public Flight(
+        string id,
+        string originCode,
+        string origin,
+        string destinationCode,
+        string destination,
+        DateTimeOffset scheduledDeparture,
+        DateTimeOffset scheduledArrival,
+        string aircraftRegistration,
+        string aircraftType,
+        string gate,
+        FlightStatus status,
+        int risk,
+        int delayMinutes,
+        int passengers,
+        int connectingPassengers,
+        string riskLabel)
+    {
+        Id = id;
+        OriginCode = originCode;
+        Origin = origin;
+        DestinationCode = destinationCode;
+        Destination = destination;
+        ScheduledDeparture = scheduledDeparture;
+        ScheduledArrival = scheduledArrival;
+        AircraftRegistration = aircraftRegistration;
+        AircraftType = aircraftType;
+        Gate = gate;
+        Status = status;
+        Risk = risk;
+        DelayMinutes = delayMinutes;
+        Passengers = passengers;
+        ConnectingPassengers = connectingPassengers;
+        RiskLabel = riskLabel;
+    }
+
+    public string Id { get; private set; } = string.Empty;
+    public string OriginCode { get; private set; } = string.Empty;
+    public string Origin { get; private set; } = string.Empty;
+    public string DestinationCode { get; private set; } = string.Empty;
+    public string Destination { get; private set; } = string.Empty;
+    public DateTimeOffset ScheduledDeparture { get; private set; }
+    public DateTimeOffset ScheduledArrival { get; private set; }
+    public string AircraftRegistration { get; private set; } = string.Empty;
+    public string AircraftType { get; private set; } = string.Empty;
+    public string Gate { get; private set; } = string.Empty;
+    public FlightStatus Status { get; private set; }
+    public int Risk { get; private set; }
+    public int DelayMinutes { get; private set; }
+    public int Passengers { get; private set; }
+    public int ConnectingPassengers { get; private set; }
+    public string RiskLabel { get; private set; } = string.Empty;
     public DateTimeOffset EstimatedDeparture => ScheduledDeparture.AddMinutes(DelayMinutes);
     public DateTimeOffset EstimatedArrival => ScheduledArrival.AddMinutes(DelayMinutes);
     public string Route => $"{OriginCode} → {DestinationCode}";
