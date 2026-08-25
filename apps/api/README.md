@@ -29,6 +29,13 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `POST /api/disruptions`
 - `POST /api/disruptions/{id}/resolve`
 - `GET /api/disruptions/{id}/audit`
+- `GET /api/disruptions/{id}/recovery-plans`
+- `POST /api/disruptions/{id}/recovery-plans/generate`
+- `GET /api/recovery-plans/{id}`
+- `POST /api/recovery-plans/{id}/approve`
+- `POST /api/recovery-plans/{id}/reject`
+- `GET /api/recovery-plans/{id}/audit`
+- `GET /api/recovery-decisions`
 
 Flight list query parameters:
 
@@ -43,6 +50,8 @@ Operational events support `severity`, `category`, and `limit` filters. The simu
 Disruption queries support `status`, `severity`, and `airport`. Creating a disruption validates its flight and airport, persists detailed aircraft-rotation, passenger-connection, gate-conflict, crew-duty, cost, and recovery impacts, and publishes an operational event. Resolving a disruption is idempotent and records one resolution event.
 
 Active disruptions are projected into persistent flight, airport, and aircraft operational state. Every creation or resolution recomputes the state from the deterministic baseline and all remaining active disruptions, preserving overlapping effects. Field-level before-and-after mutations are stored in the disruption audit trail.
+
+Recovery generation creates up to six scored strategies for an active disruption and returns the persisted candidates on subsequent calls. Decisions require notes; high-risk or high-cost plans require supervisor authorization. Approval rejects competing candidates, resolves the disruption, applies the selected recovery to persistent network state, publishes an event, and records an immutable outcome audit. Approved outcomes are reapplied during startup projection.
 
 ## Test
 

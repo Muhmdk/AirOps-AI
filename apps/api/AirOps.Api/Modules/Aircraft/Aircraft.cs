@@ -69,12 +69,16 @@ public sealed class Aircraft
         AircraftStatus status,
         int health,
         int utilization,
-        int maintenanceDue)
+        int maintenanceDue,
+        string nextFlight,
+        TimeOnly? nextDeparture)
     {
         Status = status;
         Health = health;
         Utilization = utilization;
         MaintenanceDue = maintenanceDue;
+        NextFlight = nextFlight;
+        NextDeparture = nextDeparture;
     }
 
     public void ApplyDisruption(
@@ -88,5 +92,19 @@ public sealed class Aircraft
             durationMinutes / 10d, MidpointRounding.AwayFromZero));
         if (maintenance)
             MaintenanceDue = 0;
+    }
+
+    public void AssignRecoveryFlight(string flightId)
+    {
+        Status = AircraftStatus.InService;
+        NextFlight = flightId;
+        Utilization = Math.Min(100, Utilization + 12);
+    }
+
+    public void ReleaseFromFlight()
+    {
+        Status = AircraftStatus.Available;
+        NextFlight = "Unassigned";
+        NextDeparture = null;
     }
 }

@@ -1,6 +1,7 @@
 using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Operations;
+using AirOps.Api.Modules.Recovery;
 using AirOps.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,6 +69,8 @@ public sealed class DisruptionService(
         var active = await repository.SearchAsync(
             DisruptionStatus.Active, null, null, cancellationToken);
         NetworkStateProjector.Project(network, [disruption, .. active]);
+        await RecoveryStateProjector.ProjectApprovedAsync(
+            database, network, cancellationToken);
         var after = NetworkStateProjector.Capture(network);
         var auditId = Guid.NewGuid();
         database.DisruptionAuditEntries.Add(new DisruptionAuditEntry(
@@ -117,6 +120,8 @@ public sealed class DisruptionService(
             NetworkStateProjector.Project(
                 network,
                 active.Where(item => item.Id != disruption.Id));
+            await RecoveryStateProjector.ProjectApprovedAsync(
+                database, network, cancellationToken);
             var after = NetworkStateProjector.Capture(network);
             var auditId = Guid.NewGuid();
             database.DisruptionAuditEntries.Add(new DisruptionAuditEntry(

@@ -101,4 +101,12 @@ public sealed class Airport
         if (severeWeather)
             Weather = "Severe thunderstorms";
     }
+
+    public void ApplyRecovery(int expectedDelayMinutes, int affectedFlightCount)
+    {
+        Health = Math.Min(100, Health + 12);
+        AverageDelay = Math.Max(0, Math.Min(AverageDelay, expectedDelayMinutes));
+        AtRisk = Math.Max(0, AtRisk - affectedFlightCount);
+        GatesUsed = Math.Max(0, GatesUsed - 1);
+    }
 }

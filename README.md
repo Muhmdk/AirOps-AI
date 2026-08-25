@@ -138,6 +138,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Deterministic aircraft-rotation, passenger, gate, crew, cost, and recovery impact calculations
 - Overlap-safe disruption projection into persistent flight, airport, and aircraft state
 - Immutable disruption audit entries with field-level before-and-after network mutations
+- Persistent recovery-plan generation with six weighted operational strategies
+- Controller rejection, supervisor authorization, approval execution, and recovery outcome auditing
+- Restart-safe recovery projection across flights, airports, and aircraft assignments
 
 ## Planned architecture
 

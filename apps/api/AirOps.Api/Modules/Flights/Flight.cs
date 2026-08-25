@@ -73,12 +73,14 @@ public sealed class Flight
         FlightStatus status,
         int risk,
         int delayMinutes,
-        string riskLabel)
+        string riskLabel,
+        string gate)
     {
         Status = status;
         Risk = risk;
         DelayMinutes = delayMinutes;
         RiskLabel = riskLabel;
+        Gate = gate;
     }
 
     public void ApplyDisruption(
@@ -96,5 +98,31 @@ public sealed class Flight
         Risk = Math.Min(99, risk + (overlapping ? 8 : 0));
         Status = propagatedDelay >= 30 ? FlightStatus.AtRisk : FlightStatus.Delayed;
         RiskLabel = overlapping ? $"{RiskLabel} + {disruptionType}" : disruptionType;
+    }
+
+    public void ApplyRecovery(
+        int expectedDelayMinutes,
+        int operationalRisk,
+        string recoveryAction,
+        bool changeGate)
+    {
+        DelayMinutes = expectedDelayMinutes;
+        Risk = operationalRisk;
+        Status = expectedDelayMinutes <= 15
+            ? FlightStatus.OnTime
+            : expectedDelayMinutes < 35
+                ? FlightStatus.Delayed
+                : FlightStatus.AtRisk;
+        RiskLabel = $"Recovery: {recoveryAction}";
+        if (changeGate)
+            Gate = NextGate(Gate);
+    }
+
+    private static string NextGate(string gate)
+    {
+        var digits = new string(gate.SkipWhile(character => !char.IsDigit(character)).ToArray());
+        if (digits.Length == 0 || !int.TryParse(digits, out var number))
+            return gate;
+        return $"{gate[..^digits.Length]}{number + 2}";
     }
 }

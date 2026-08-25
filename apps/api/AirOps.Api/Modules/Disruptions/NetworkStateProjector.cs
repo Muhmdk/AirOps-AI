@@ -13,7 +13,8 @@ public static class NetworkStateProjector
     private static readonly IReadOnlyDictionary<string, FlightBaseline> FlightBaselines =
         FlightSeed.All.ToDictionary(
             item => item.Id,
-            item => new FlightBaseline(item.Status, item.Risk, item.DelayMinutes, item.RiskLabel),
+            item => new FlightBaseline(
+                item.Status, item.Risk, item.DelayMinutes, item.RiskLabel, item.Gate),
             StringComparer.OrdinalIgnoreCase);
     private static readonly IReadOnlyDictionary<string, AirportBaseline> AirportBaselines =
         AirportSeed.All.ToDictionary(
@@ -26,7 +27,8 @@ public static class NetworkStateProjector
         AircraftSeed.All.ToDictionary(
             item => item.Registration,
             item => new AircraftBaseline(
-                item.Status, item.Health, item.Utilization, item.MaintenanceDue),
+                item.Status, item.Health, item.Utilization, item.MaintenanceDue,
+                item.NextFlight, item.NextDeparture),
             StringComparer.OrdinalIgnoreCase);
 
     public static async Task<TrackedNetworkState> LoadAsync(
@@ -44,7 +46,8 @@ public static class NetworkStateProjector
         {
             var baseline = FlightBaselines[flight.Id];
             flight.RestoreOperationalState(
-                baseline.Status, baseline.Risk, baseline.DelayMinutes, baseline.RiskLabel);
+                baseline.Status, baseline.Risk, baseline.DelayMinutes,
+                baseline.RiskLabel, baseline.Gate);
         }
         foreach (var airport in network.Airports)
         {
@@ -57,7 +60,8 @@ public static class NetworkStateProjector
         {
             var baseline = AircraftBaselines[aircraft.Registration];
             aircraft.RestoreOperationalState(
-                baseline.Status, baseline.Health, baseline.Utilization, baseline.MaintenanceDue);
+                baseline.Status, baseline.Health, baseline.Utilization, baseline.MaintenanceDue,
+                baseline.NextFlight, baseline.NextDeparture);
         }
 
         foreach (var disruption in activeDisruptions
@@ -76,6 +80,7 @@ public static class NetworkStateProjector
             Add(values, "Flight", flight.Id, "Delay", flight.DelayMinutes);
             Add(values, "Flight", flight.Id, "Risk", flight.Risk);
             Add(values, "Flight", flight.Id, "Risk label", flight.RiskLabel);
+            Add(values, "Flight", flight.Id, "Gate", flight.Gate);
         }
         foreach (var airport in network.Airports)
         {
@@ -92,6 +97,7 @@ public static class NetworkStateProjector
             Add(values, "Aircraft", aircraft.Registration, "Health", aircraft.Health);
             Add(values, "Aircraft", aircraft.Registration, "Utilization", aircraft.Utilization);
             Add(values, "Aircraft", aircraft.Registration, "Maintenance due", aircraft.MaintenanceDue);
+            Add(values, "Aircraft", aircraft.Registration, "Next flight", aircraft.NextFlight);
         }
         return new NetworkStateSnapshot(values);
     }
@@ -160,11 +166,16 @@ public static class NetworkStateProjector
     }
 
     private sealed record FlightBaseline(
-        FlightStatus Status, int Risk, int DelayMinutes, string RiskLabel);
+        FlightStatus Status, int Risk, int DelayMinutes, string RiskLabel, string Gate);
     private sealed record AirportBaseline(
         AirportRisk Risk, int Health, int AverageDelay, int AtRisk, int GatesUsed, string Weather);
     private sealed record AircraftBaseline(
-        AircraftStatus Status, int Health, int Utilization, int MaintenanceDue);
+        AircraftStatus Status,
+        int Health,
+        int Utilization,
+        int MaintenanceDue,
+        string NextFlight,
+        TimeOnly? NextDeparture);
 }
 
 public sealed record TrackedNetworkState(

@@ -1,5 +1,6 @@
 using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Operations;
+using AirOps.Api.Modules.Recovery;
 using Microsoft.EntityFrameworkCore;
 
 namespace AirOps.Api.Persistence;
@@ -41,6 +42,8 @@ public static class DatabaseInitialiser
             .ToListAsync();
         var network = await NetworkStateProjector.LoadAsync(database, CancellationToken.None);
         NetworkStateProjector.Project(network, activeDisruptions);
+        await RecoveryStateProjector.ProjectApprovedAsync(
+            database, network, CancellationToken.None);
         await database.SaveChangesAsync();
     }
 }

@@ -5,6 +5,7 @@ using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Network;
 using AirOps.Api.Modules.Operations;
+using AirOps.Api.Modules.Recovery;
 using AirOps.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,8 @@ builder.Services.AddScoped<IAircraftRepository, EfAircraftRepository>();
 builder.Services.AddScoped<IOperationalEventRepository, EfOperationalEventRepository>();
 builder.Services.AddScoped<IDisruptionRepository, EfDisruptionRepository>();
 builder.Services.AddScoped<DisruptionService>();
+builder.Services.AddScoped<IRecoveryPlanRepository, EfRecoveryPlanRepository>();
+builder.Services.AddScoped<RecoveryService>();
 builder.Services.AddScoped<SimulationClockService>();
 builder.Services.AddSingleton(TimeProvider.System);
 if (!builder.Environment.IsEnvironment("Testing"))
@@ -50,6 +53,7 @@ app.MapAircraftEndpoints();
 app.MapNetworkEndpoints();
 app.MapOperationsEndpoints();
 app.MapDisruptionEndpoints();
+app.MapRecoveryEndpoints();
 
 app.Run();
 

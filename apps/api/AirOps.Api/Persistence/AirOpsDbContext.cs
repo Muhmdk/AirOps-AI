@@ -3,6 +3,7 @@ using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Operations;
+using AirOps.Api.Modules.Recovery;
 using Microsoft.EntityFrameworkCore;
 
 namespace AirOps.Api.Persistence;
@@ -16,6 +17,8 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
     public DbSet<SimulationClockState> SimulationClocks => Set<SimulationClockState>();
     public DbSet<Disruption> Disruptions => Set<Disruption>();
     public DbSet<DisruptionAuditEntry> DisruptionAuditEntries => Set<DisruptionAuditEntry>();
+    public DbSet<RecoveryPlan> RecoveryPlans => Set<RecoveryPlan>();
+    public DbSet<RecoveryAuditEntry> RecoveryAuditEntries => Set<RecoveryAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -247,5 +250,61 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
             .HasForeignKey(item => item.AuditEntryId).OnDelete(DeleteBehavior.Cascade);
         mutation.HasIndex(item => item.AuditEntryId);
         mutation.HasIndex(item => new { item.EntityType, item.EntityId });
+
+        var recoveryPlan = modelBuilder.Entity<RecoveryPlan>();
+        recoveryPlan.ToTable("recovery_plans");
+        recoveryPlan.HasKey(item => item.Id);
+        recoveryPlan.Property(item => item.Id).HasColumnName("id").HasMaxLength(20);
+        recoveryPlan.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        recoveryPlan.Property(item => item.Name).HasColumnName("name").HasMaxLength(120);
+        recoveryPlan.Property(item => item.Action).HasColumnName("action").HasConversion<string>().HasMaxLength(40);
+        recoveryPlan.Property(item => item.Description).HasColumnName("description").HasMaxLength(300);
+        recoveryPlan.Property(item => item.FlightsAffected).HasColumnName("flights_affected").HasColumnType("text[]");
+        recoveryPlan.Property(item => item.AircraftAffected).HasColumnName("aircraft_affected").HasColumnType("text[]");
+        recoveryPlan.Property(item => item.PassengersAffected).HasColumnName("passengers_affected");
+        recoveryPlan.Property(item => item.MissedConnections).HasColumnName("missed_connections");
+        recoveryPlan.Property(item => item.ExpectedDelayMinutes).HasColumnName("expected_delay_minutes");
+        recoveryPlan.Property(item => item.RecoveryMinutes).HasColumnName("recovery_minutes");
+        recoveryPlan.Property(item => item.EstimatedCost).HasColumnName("estimated_cost");
+        recoveryPlan.Property(item => item.OperationalRisk).HasColumnName("operational_risk").HasConversion<string>().HasMaxLength(20);
+        recoveryPlan.Property(item => item.Advantages).HasColumnName("advantages").HasColumnType("text[]");
+        recoveryPlan.Property(item => item.Disadvantages).HasColumnName("disadvantages").HasColumnType("text[]");
+        recoveryPlan.Property(item => item.Score).HasColumnName("score");
+        recoveryPlan.Property(item => item.Recommended).HasColumnName("recommended");
+        recoveryPlan.Property(item => item.DelayScore).HasColumnName("delay_score");
+        recoveryPlan.Property(item => item.CostScore).HasColumnName("cost_score");
+        recoveryPlan.Property(item => item.PassengerScore).HasColumnName("passenger_score");
+        recoveryPlan.Property(item => item.RiskScore).HasColumnName("risk_score");
+        recoveryPlan.Property(item => item.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20);
+        recoveryPlan.Property(item => item.CreatedAt).HasColumnName("created_at");
+        recoveryPlan.Ignore(item => item.RequiresSupervisor);
+        recoveryPlan.HasOne<Disruption>().WithMany().HasForeignKey(item => item.DisruptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+        recoveryPlan.HasIndex(item => new { item.DisruptionId, item.Action }).IsUnique();
+        recoveryPlan.HasIndex(item => item.Status);
+        recoveryPlan.HasIndex(item => item.Score);
+
+        var recoveryAudit = modelBuilder.Entity<RecoveryAuditEntry>();
+        recoveryAudit.ToTable("recovery_audit_entries");
+        recoveryAudit.HasKey(item => item.Id);
+        recoveryAudit.Property(item => item.Id).HasColumnName("id");
+        recoveryAudit.Property(item => item.PlanId).HasColumnName("plan_id").HasMaxLength(20);
+        recoveryAudit.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        recoveryAudit.Property(item => item.Action).HasColumnName("action").HasConversion<string>().HasMaxLength(20);
+        recoveryAudit.Property(item => item.Actor).HasColumnName("actor").HasMaxLength(80);
+        recoveryAudit.Property(item => item.ActorRole).HasColumnName("actor_role").HasMaxLength(40);
+        recoveryAudit.Property(item => item.Timestamp).HasColumnName("timestamp");
+        recoveryAudit.Property(item => item.Notes).HasColumnName("notes").HasMaxLength(500);
+        recoveryAudit.Property(item => item.SupervisorOverride).HasColumnName("supervisor_override");
+        recoveryAudit.Property(item => item.DelayBefore).HasColumnName("delay_before");
+        recoveryAudit.Property(item => item.DelayAfter).HasColumnName("delay_after");
+        recoveryAudit.Property(item => item.CostBefore).HasColumnName("cost_before");
+        recoveryAudit.Property(item => item.CostAfter).HasColumnName("cost_after");
+        recoveryAudit.Property(item => item.MissedBefore).HasColumnName("missed_before");
+        recoveryAudit.Property(item => item.MissedAfter).HasColumnName("missed_after");
+        recoveryAudit.HasOne<RecoveryPlan>().WithMany().HasForeignKey(item => item.PlanId)
+            .OnDelete(DeleteBehavior.Cascade);
+        recoveryAudit.HasIndex(item => item.DisruptionId);
+        recoveryAudit.HasIndex(item => item.Timestamp);
     }
 }
