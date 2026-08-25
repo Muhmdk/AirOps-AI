@@ -134,6 +134,8 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Persistent operational event history with severity and category filters
 - Controllable simulation clock with start, pause, advance, and reset operations
 - Background clock advancement and deterministic flight milestone generation
+- Persistent disruption lifecycle with collection, detail, creation, and resolution APIs
+- Deterministic aircraft-rotation, passenger, gate, crew, cost, and recovery impact calculations
 
 ## Planned architecture
 

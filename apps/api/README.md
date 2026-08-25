@@ -24,6 +24,10 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `POST /api/simulation/clock/pause`
 - `POST /api/simulation/clock/advance`
 - `POST /api/simulation/clock/reset`
+- `GET /api/disruptions`
+- `GET /api/disruptions/{id}`
+- `POST /api/disruptions`
+- `POST /api/disruptions/{id}/resolve`
 
 Flight list query parameters:
 
@@ -34,6 +38,8 @@ Flight list query parameters:
 Airport queries support `search` and `risk`. Aircraft queries support `search`, `status`, and `family`.
 
 Operational events support `severity`, `category`, and `limit` filters. The simulation clock starts paused at the deterministic demonstration time. Manual advancement and the five-second background ticker publish flight-departure milestones exactly once.
+
+Disruption queries support `status`, `severity`, and `airport`. Creating a disruption validates its flight and airport, persists detailed aircraft-rotation, passenger-connection, gate-conflict, crew-duty, cost, and recovery impacts, and publishes an operational event. Resolving a disruption is idempotent and records one resolution event.
 
 ## Test
 

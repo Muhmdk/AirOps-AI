@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using AirOps.Api.Modules.Aircraft;
 using AirOps.Api.Modules.Airports;
+using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Network;
 using AirOps.Api.Modules.Operations;
@@ -18,6 +19,8 @@ builder.Services.AddScoped<IFlightRepository, EfFlightRepository>();
 builder.Services.AddScoped<IAirportRepository, EfAirportRepository>();
 builder.Services.AddScoped<IAircraftRepository, EfAircraftRepository>();
 builder.Services.AddScoped<IOperationalEventRepository, EfOperationalEventRepository>();
+builder.Services.AddScoped<IDisruptionRepository, EfDisruptionRepository>();
+builder.Services.AddScoped<DisruptionService>();
 builder.Services.AddScoped<SimulationClockService>();
 builder.Services.AddSingleton(TimeProvider.System);
 if (!builder.Environment.IsEnvironment("Testing"))
@@ -46,6 +49,7 @@ app.MapAirportEndpoints();
 app.MapAircraftEndpoints();
 app.MapNetworkEndpoints();
 app.MapOperationsEndpoints();
+app.MapDisruptionEndpoints();
 
 app.Run();
 

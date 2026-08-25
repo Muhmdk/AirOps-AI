@@ -25,6 +25,8 @@ public static class DatabaseInitialiser
             database.OperationalEvents.AddRange(OperationalEventSeed.All);
         if (!await database.SimulationClocks.AnyAsync())
             database.SimulationClocks.Add(new SimulationClockState(DateTimeOffset.UtcNow));
+        if (!await database.Disruptions.AnyAsync())
+            database.Disruptions.AddRange(DisruptionSeed.All);
         await database.SaveChangesAsync();
     }
 }

@@ -1,5 +1,6 @@
 using AirOps.Api.Modules.Aircraft;
 using AirOps.Api.Modules.Airports;
+using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
     public DbSet<Aircraft> Aircraft => Set<Aircraft>();
     public DbSet<OperationalEvent> OperationalEvents => Set<OperationalEvent>();
     public DbSet<SimulationClockState> SimulationClocks => Set<SimulationClockState>();
+    public DbSet<Disruption> Disruptions => Set<Disruption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,5 +117,105 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
         clock.Property(item => item.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20);
         clock.Property(item => item.MinutesPerTick).HasColumnName("minutes_per_tick");
         clock.Property(item => item.UpdatedAt).HasColumnName("updated_at");
+
+        var disruption = modelBuilder.Entity<Disruption>();
+        disruption.ToTable("disruptions");
+        disruption.HasKey(item => item.Id);
+        disruption.Property(item => item.Id).HasColumnName("id").HasMaxLength(12);
+        disruption.Property(item => item.Type).HasColumnName("type").HasConversion<string>().HasMaxLength(40);
+        disruption.Property(item => item.Severity).HasColumnName("severity").HasConversion<string>().HasMaxLength(20);
+        disruption.Property(item => item.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20);
+        disruption.Property(item => item.AirportCode).HasColumnName("airport_code").HasMaxLength(3);
+        disruption.Property(item => item.PrimaryFlightId).HasColumnName("primary_flight_id").HasMaxLength(8);
+        disruption.Property(item => item.StartedAt).HasColumnName("started_at");
+        disruption.Property(item => item.DurationMinutes).HasColumnName("duration_minutes");
+        disruption.Property(item => item.Description).HasColumnName("description").HasMaxLength(300);
+        disruption.Property(item => item.CreatedAt).HasColumnName("created_at");
+        disruption.Property(item => item.ResolvedAt).HasColumnName("resolved_at");
+        disruption.Property(item => item.AffectedFlights).HasColumnName("affected_flights");
+        disruption.Property(item => item.AffectedPassengers).HasColumnName("affected_passengers");
+        disruption.Property(item => item.MissedConnections).HasColumnName("missed_connections");
+        disruption.Property(item => item.CrewAffected).HasColumnName("crew_affected");
+        disruption.Property(item => item.GateConflicts).HasColumnName("gate_conflicts");
+        disruption.Property(item => item.HotelRooms).HasColumnName("hotel_rooms");
+        disruption.Property(item => item.MealVouchers).HasColumnName("meal_vouchers");
+        disruption.Property(item => item.EstimatedCompensation).HasColumnName("estimated_compensation");
+        disruption.Property(item => item.EstimatedOperationalCost).HasColumnName("estimated_operational_cost");
+        disruption.Property(item => item.RecoveryMinutes).HasColumnName("recovery_minutes");
+        disruption.HasOne<Airport>().WithMany().HasForeignKey(item => item.AirportCode)
+            .OnDelete(DeleteBehavior.Restrict);
+        disruption.HasOne<Flight>().WithMany().HasForeignKey(item => item.PrimaryFlightId)
+            .OnDelete(DeleteBehavior.Restrict);
+        disruption.HasIndex(item => item.Status);
+        disruption.HasIndex(item => item.Severity);
+        disruption.HasIndex(item => item.AirportCode);
+        disruption.HasIndex(item => item.StartedAt);
+
+        var impactedFlight = modelBuilder.Entity<ImpactedFlight>();
+        impactedFlight.ToTable("disruption_flights");
+        impactedFlight.HasKey(item => item.Id);
+        impactedFlight.Property(item => item.Id).HasColumnName("id");
+        impactedFlight.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        impactedFlight.Property(item => item.Sequence).HasColumnName("sequence");
+        impactedFlight.Property(item => item.FlightId).HasColumnName("flight_id").HasMaxLength(8);
+        impactedFlight.Property(item => item.Route).HasColumnName("route").HasMaxLength(20);
+        impactedFlight.Property(item => item.OriginalDelay).HasColumnName("original_delay");
+        impactedFlight.Property(item => item.PropagatedDelay).HasColumnName("propagated_delay");
+        impactedFlight.Property(item => item.Passengers).HasColumnName("passengers");
+        impactedFlight.Property(item => item.MissedConnections).HasColumnName("missed_connections");
+        impactedFlight.Property(item => item.Reason).HasColumnName("reason").HasMaxLength(120);
+        impactedFlight.HasOne<Disruption>().WithMany(item => item.Flights)
+            .HasForeignKey(item => item.DisruptionId).OnDelete(DeleteBehavior.Cascade);
+        impactedFlight.HasIndex(item => new { item.DisruptionId, item.Sequence }).IsUnique();
+
+        var connection = modelBuilder.Entity<PassengerConnectionImpact>();
+        connection.ToTable("disruption_connections");
+        connection.HasKey(item => item.Id);
+        connection.Property(item => item.Id).HasColumnName("id");
+        connection.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        connection.Property(item => item.Sequence).HasColumnName("sequence");
+        connection.Property(item => item.InboundFlight).HasColumnName("inbound_flight").HasMaxLength(8);
+        connection.Property(item => item.OutboundFlight).HasColumnName("outbound_flight").HasMaxLength(8);
+        connection.Property(item => item.ConnectionAirport).HasColumnName("connection_airport").HasMaxLength(3);
+        connection.Property(item => item.Passengers).HasColumnName("passengers");
+        connection.Property(item => item.MinimumConnectionMinutes).HasColumnName("minimum_connection_minutes");
+        connection.Property(item => item.AvailableConnectionMinutes).HasColumnName("available_connection_minutes");
+        connection.Property(item => item.Status).HasColumnName("status").HasMaxLength(20);
+        connection.HasOne<Disruption>().WithMany(item => item.Connections)
+            .HasForeignKey(item => item.DisruptionId).OnDelete(DeleteBehavior.Cascade);
+        connection.HasIndex(item => new { item.DisruptionId, item.Sequence }).IsUnique();
+
+        var gateConflict = modelBuilder.Entity<GateConflictImpact>();
+        gateConflict.ToTable("disruption_gate_conflicts");
+        gateConflict.HasKey(item => item.Id);
+        gateConflict.Property(item => item.Id).HasColumnName("id");
+        gateConflict.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        gateConflict.Property(item => item.Sequence).HasColumnName("sequence");
+        gateConflict.Property(item => item.Airport).HasColumnName("airport").HasMaxLength(3);
+        gateConflict.Property(item => item.Gate).HasColumnName("gate").HasMaxLength(8);
+        gateConflict.Property(item => item.IncomingFlight).HasColumnName("incoming_flight").HasMaxLength(8);
+        gateConflict.Property(item => item.OccupyingFlight).HasColumnName("occupying_flight").HasMaxLength(8);
+        gateConflict.Property(item => item.OverlapMinutes).HasColumnName("overlap_minutes");
+        gateConflict.Property(item => item.Severity).HasColumnName("severity").HasMaxLength(20);
+        gateConflict.HasOne<Disruption>().WithMany(item => item.GateDetails)
+            .HasForeignKey(item => item.DisruptionId).OnDelete(DeleteBehavior.Cascade);
+        gateConflict.HasIndex(item => new { item.DisruptionId, item.Sequence }).IsUnique();
+
+        var crew = modelBuilder.Entity<CrewDutyImpact>();
+        crew.ToTable("disruption_crew_impacts");
+        crew.HasKey(item => item.Id);
+        crew.Property(item => item.Id).HasColumnName("id");
+        crew.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        crew.Property(item => item.Sequence).HasColumnName("sequence");
+        crew.Property(item => item.CrewId).HasColumnName("crew_id").HasMaxLength(20);
+        crew.Property(item => item.FlightId).HasColumnName("flight_id").HasMaxLength(8);
+        crew.Property(item => item.Role).HasColumnName("role").HasMaxLength(40);
+        crew.Property(item => item.ProjectedDutyMinutes).HasColumnName("projected_duty_minutes");
+        crew.Property(item => item.LegalLimitMinutes).HasColumnName("legal_limit_minutes");
+        crew.Property(item => item.RemainingMinutes).HasColumnName("remaining_minutes");
+        crew.Property(item => item.Status).HasColumnName("status").HasMaxLength(20);
+        crew.HasOne<Disruption>().WithMany(item => item.CrewDetails)
+            .HasForeignKey(item => item.DisruptionId).OnDelete(DeleteBehavior.Cascade);
+        crew.HasIndex(item => new { item.DisruptionId, item.Sequence }).IsUnique();
     }
 }
