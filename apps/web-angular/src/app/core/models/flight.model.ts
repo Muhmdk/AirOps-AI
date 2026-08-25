@@ -18,6 +18,8 @@ export interface Flight {
 }
 
 export interface OperationalEvent {
+  id?: string;
+  timestamp?: string;
   time: string;
   type: 'risk' | 'delay' | 'gate' | 'ok';
   title: string;
@@ -26,5 +28,5 @@ export interface OperationalEvent {
   severity?: 'Critical' | 'Warning' | 'Information';
   entityType?: 'flight' | 'airport' | 'aircraft';
   entityId?: string;
-  category?: 'Weather' | 'Flight' | 'Gate' | 'Aircraft' | 'Passenger';
+  category?: 'Weather' | 'Flight' | 'Gate' | 'Aircraft' | 'Passenger' | 'Simulation';
 }

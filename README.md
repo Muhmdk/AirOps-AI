@@ -40,9 +40,16 @@ Password: operations
 Use Node.js 24 LTS or a version supported by Angular 22.
 
 ```bash
+docker compose up -d postgres
+dotnet run --project apps/api/AirOps.Api --urls http://localhost:5000
+```
+
+In a second terminal:
+
+```bash
 cd apps/web-angular
-npm install
-npm start
+corepack pnpm install
+corepack pnpm start
 ```
 
 Then open `http://localhost:4200`.
@@ -112,7 +119,8 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 
 ## Current verification
 
-- 16 unit and service-level tests
+- 16 Angular unit and service-level tests
+- 32 backend integration tests
 - 5 Cypress end-to-end controller journeys
 - Successful Angular production build
 
@@ -141,7 +149,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Persistent recovery-plan generation with six weighted operational strategies
 - Controller rejection, supervisor authorization, approval execution, and recovery outcome auditing
 - Restart-safe recovery projection across flights, airports, and aircraft assignments
+- SignalR operational event hub that broadcasts only committed database events
+- Angular event history loading, live updates, reconnect state, and offline fallback
 
 ## Planned architecture
 
-The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The current UI uses an in-memory typed data source so it can later be replaced by NgRx effects and backend APIs without changing the interaction model.
+The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The operational timeline now uses the backend API and SignalR hub; the remaining Angular workspaces still use typed browser-side services while their API integrations are built incrementally.

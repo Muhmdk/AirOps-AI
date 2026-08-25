@@ -5,7 +5,7 @@ The AirOps backend is an ASP.NET Core modular monolith. The first module exposes
 ## Run
 
 ```bash
-dotnet run --project apps/api/AirOps.Api
+dotnet run --project apps/api/AirOps.Api --urls http://localhost:5000
 ```
 
 The development API listens on the URL printed by ASP.NET Core. Available endpoints:
@@ -36,6 +36,7 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `POST /api/recovery-plans/{id}/reject`
 - `GET /api/recovery-plans/{id}/audit`
 - `GET /api/recovery-decisions`
+- `WS /hubs/operations` (`operationalEvent` SignalR messages)
 
 Flight list query parameters:
 
@@ -46,6 +47,8 @@ Flight list query parameters:
 Airport queries support `search` and `risk`. Aircraft queries support `search`, `status`, and `family`.
 
 Operational events support `severity`, `category`, and `limit` filters. The simulation clock starts paused at the deterministic demonstration time. Manual advancement and the five-second background ticker publish flight-departure milestones exactly once.
+
+Every operational event is broadcast through the SignalR hub only after its database transaction commits. Clients can load retained history through the REST endpoint, subscribe for live updates, and safely reconnect without relying on an in-memory broker.
 
 Disruption queries support `status`, `severity`, and `airport`. Creating a disruption validates its flight and airport, persists detailed aircraft-rotation, passenger-connection, gate-conflict, crew-duty, cost, and recovery impacts, and publishes an operational event. Resolving a disruption is idempotent and records one resolution event.
 

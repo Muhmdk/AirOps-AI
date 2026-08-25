@@ -1,12 +1,9 @@
-using System.Globalization;
 using AirOps.Api.Contracts;
 
 namespace AirOps.Api.Modules.Operations;
 
 public static class OperationsEndpoints
 {
-    private static readonly TimeSpan DemoOffset = TimeSpan.FromHours(-4);
-
     public static IEndpointRouteBuilder MapOperationsEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/operations/events", GetEvents)
@@ -37,7 +34,7 @@ public static class OperationsEndpoints
 
         var events = await repository.SearchAsync(
             severity, category, limit, cancellationToken);
-        return Results.Ok(events.Select(ToResponse));
+        return Results.Ok(events.Select(OperationalEventMappings.ToResponse));
     }
 
     private static async Task<SimulationClockResponse> GetClock(
@@ -82,19 +79,6 @@ public static class OperationsEndpoints
         SimulationClockService service,
         CancellationToken cancellationToken) =>
         ToResponse(await service.ResetAsync(cancellationToken));
-
-    private static OperationalEventResponse ToResponse(OperationalEvent item) => new(
-        item.Id,
-        item.OccurredAt,
-        item.OccurredAt.ToOffset(DemoOffset).ToString("HH:mm", CultureInfo.InvariantCulture),
-        item.Type.ToString().ToLowerInvariant(),
-        item.Title,
-        item.Detail,
-        item.Accent,
-        item.Severity.ToString(),
-        item.EntityType,
-        item.EntityId,
-        item.Category.ToString());
 
     private static SimulationClockResponse ToResponse(SimulationClockState clock) => new(
         clock.CurrentTime,

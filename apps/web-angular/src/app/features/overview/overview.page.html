@@ -41,7 +41,7 @@
           </div>
         </article>
 
-        <article class="card events-card"><div class="card-head"><div><h2>Live operations</h2><p><span class="live-dot"></span>Updating live</p></div><button (click)="navTo('Event timeline')">View all →</button></div><div class="event-list">@for (event of events(); track event.time + event.title) {<div class="event"><span class="event-icon {{event.accent}}">{{event.type === 'risk' ? 'ϟ' : event.type === 'delay' ? '!' : event.type === 'gate' ? '↔' : '✓'}}</span><div><b>{{event.title}}</b><p>{{event.detail}}</p></div><time>{{event.time}}</time></div>}</div></article>
+        <article class="card events-card"><div class="card-head"><div><h2>Live operations</h2><p><span class="live-dot"></span>Updating live</p></div><button (click)="navTo('Event timeline')">View all →</button></div><div class="event-list">@for (event of recentEvents(); track event.id ?? event.time + event.title) {<div class="event"><span class="event-icon {{event.accent}}">{{event.type === 'risk' ? 'ϟ' : event.type === 'delay' ? '!' : event.type === 'gate' ? '↔' : '✓'}}</span><div><b>{{event.title}}</b><p>{{event.detail}}</p></div><time>{{event.time}}</time></div>}</div></article>
       </div>
 
       <article class="card flights-card"><div class="card-head"><div><h2>Flights requiring attention</h2><p>Sorted by disruption risk</p></div><button (click)="navTo('Flights')">View all flights →</button></div>

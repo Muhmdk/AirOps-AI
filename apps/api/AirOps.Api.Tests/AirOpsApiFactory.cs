@@ -1,4 +1,5 @@
 using AirOps.Api.Persistence;
+using AirOps.Api.Modules.Operations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +20,9 @@ public sealed class AirOpsApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<AirOpsDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<AirOpsDbContext>>();
-            services.AddDbContext<AirOpsDbContext>(options =>
-                options.UseInMemoryDatabase(databaseName));
+            services.AddDbContext<AirOpsDbContext>((provider, options) =>
+                options.UseInMemoryDatabase(databaseName)
+                    .AddInterceptors(provider.GetRequiredService<OperationalEventBroadcastInterceptor>()));
         });
     }
 }

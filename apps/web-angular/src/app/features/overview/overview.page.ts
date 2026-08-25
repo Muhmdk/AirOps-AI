@@ -29,6 +29,7 @@ export class OverviewPage {
   readonly filteredFlights = this.store.selectSignal(flightsFeature.selectFilteredFlights);
   readonly selected = this.store.selectSignal(flightsFeature.selectSelectedFlight);
   readonly events = toSignal(this.operations.events$, { initialValue: [] as OperationalEvent[] });
+  readonly recentEvents = computed(() => this.events().slice(0, 4));
   readonly search = this.store.selectSignal(flightsFeature.selectSearch);
   readonly networkMetrics = computed(() => {
     const flights = this.flights();

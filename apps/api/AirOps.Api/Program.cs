@@ -14,8 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
-builder.Services.AddDbContext<AirOpsDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("AirOps")));
+builder.Services.AddSignalR();
+builder.Services.AddScoped<OperationalEventBroadcastInterceptor>();
+builder.Services.AddDbContext<AirOpsDbContext>((services, options) =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("AirOps"))
+        .AddInterceptors(services.GetRequiredService<OperationalEventBroadcastInterceptor>()));
 builder.Services.AddScoped<IFlightRepository, EfFlightRepository>();
 builder.Services.AddScoped<IAirportRepository, EfAirportRepository>();
 builder.Services.AddScoped<IAircraftRepository, EfAircraftRepository>();
@@ -32,7 +35,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AngularDevelopment", policy =>
         policy.WithOrigins("http://localhost:4200")
             .AllowAnyHeader()
-            .AllowAnyMethod()));
+            .AllowAnyMethod()
+            .AllowCredentials()));
 
 var app = builder.Build();
 
@@ -52,6 +56,7 @@ app.MapAirportEndpoints();
 app.MapAircraftEndpoints();
 app.MapNetworkEndpoints();
 app.MapOperationsEndpoints();
+app.MapHub<OperationsHub>("/hubs/operations");
 app.MapDisruptionEndpoints();
 app.MapRecoveryEndpoints();
 
