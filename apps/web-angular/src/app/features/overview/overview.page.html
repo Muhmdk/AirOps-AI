@@ -10,7 +10,7 @@
         <button [class.active]="activeNav() === item" (click)="navTo(item)"><span class="nav-icon">{{ item === 'Airports' ? '⌾' : item === 'Aircraft' ? '⌁' : item === 'Passengers' ? '♧' : '≡' }}</span>{{item}}</button>
       }
     </nav>
-    <div class="system-status"><span></span><div><b>All systems operational</b><small>Updated 12 sec ago</small></div></div>
+    <div class="system-status"><span></span><div><b>{{networkSource() === 'backend' ? 'Backend synchronized' : 'Offline demonstration'}}</b><small>{{networkSource() === 'backend' ? 'Live API metrics' : 'Seeded network metrics'}}</small></div></div>
     <div class="profile"><div class="avatar">{{auth.session()?.initials}}</div><div><b>{{auth.session()?.name}}</b><small>{{auth.session()?.role}}</small></div><button aria-label="Sign out" title="Sign out" (click)="signOut()">↪</button></div>
   </aside>
 
@@ -24,9 +24,9 @@
       <div class="alert"><div class="alert-icon">ϟ</div><div><strong>Severe weather advisory · Toronto Pearson</strong><p>Thunderstorms expected 09:30–13:00. 12 flights have elevated disruption risk.</p></div><button (click)="notify('Showing 12 weather-affected flights')">View affected flights <span>→</span></button></div>
 
       <div class="metrics">
-        <article class="metric health"><div class="metric-head"><span>NETWORK HEALTH</span><i>↗</i></div><div class="health-row"><div class="gauge" [attr.aria-label]="'Network health '+networkMetrics().health+' percent'"><div><strong>{{networkMetrics().health}}</strong><small>/100</small></div></div><div><span class="trend up">Live</span><p>disruption adjusted</p></div></div></article>
+        <article class="metric health"><div class="metric-head"><span>NETWORK HEALTH</span><i>↗</i></div><div class="health-row"><div class="gauge" [attr.aria-label]="'Network health '+networkMetrics().health+' percent'"><div><strong>{{networkMetrics().health}}</strong><small>/100</small></div></div><div><span class="trend up">{{networkSource() === 'backend' ? 'Live' : 'Demo'}}</span><p>disruption adjusted</p></div></div></article>
         <article class="metric"><div class="metric-head"><span>MONITORED FLIGHTS</span><i>✈</i></div><strong class="big">{{flights().length}}</strong><div class="split"><span><b class="green-dot"></b>On time <em>{{networkMetrics().onTime}}</em></span><span><b class="red-dot"></b>Delayed <em>{{networkMetrics().delayed}}</em></span><span><b class="amber-dot"></b>At risk <em>{{networkMetrics().atRisk}}</em></span><span><b class="grey-dot"></b>Other <em>{{flights().length-networkMetrics().onTime-networkMetrics().delayed-networkMetrics().atRisk}}</em></span></div></article>
-        <article class="metric"><div class="metric-head"><span>PASSENGER IMPACT</span><i>♧</i></div><strong class="big">{{networkMetrics().passengers | number}}</strong><p>passengers affected</p><div class="mini-stats"><span><b>{{networkMetrics().connections}}</b><small>Connections at risk</small></span><span><b>{{(networkMetrics().connections*.28).toFixed(0)}}</b><small>Likely missed</small></span></div></article>
+        <article class="metric"><div class="metric-head"><span>NETWORK LOAD</span><i>♧</i></div><strong class="big">{{networkMetrics().passengers | number}}</strong><p>passengers monitored</p><div class="mini-stats"><span><b>{{networkMetrics().connections}}</b><small>Connecting passengers</small></span><span><b>{{networkMetrics().highRisk}}</b><small>High-risk flights</small></span></div></article>
         <article class="metric"><div class="metric-head"><span>AIRCRAFT STATUS</span><i>⌁</i></div><strong class="big">{{(networkMetrics().fleetAvailable/networkMetrics().fleetTotal*100).toFixed(0)}}<span>%</span></strong><p>fleet available</p><div class="availability"><span [style.width.%]="networkMetrics().fleetAvailable/networkMetrics().fleetTotal*100"></span></div><div class="availability-label"><span>{{networkMetrics().fleetAvailable}} available</span><span>{{networkMetrics().fleetTotal-networkMetrics().fleetAvailable}} unavailable</span></div></article>
       </div>
 

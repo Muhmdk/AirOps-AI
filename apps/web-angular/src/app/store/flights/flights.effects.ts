@@ -15,4 +15,14 @@ export class FlightsEffects {
       catchError(error => of(FlightsActions.loadFailure({ error: error instanceof Error ? error.message : 'Unable to load flights' })))
     ))
   ));
+
+  readonly loadFlight$ = createEffect(() => this.actions$.pipe(
+    ofType(FlightsActions.loadFlight),
+    switchMap(({ id }) => this.api.getFlight(id).pipe(
+      map(flight => FlightsActions.loadFlightSuccess({ flight })),
+      catchError(error => of(FlightsActions.loadFlightFailure({
+        error: error instanceof Error ? error.message : 'Unable to load flight',
+      })))
+    ))
+  ));
 }

@@ -1,6 +1,7 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { delay, Observable, of } from 'rxjs';
-import { Flight } from '../models/flight.model';
+import { catchError, delay, map, Observable, of, tap, throwError } from 'rxjs';
+import { Flight, FlightStatus } from '../models/flight.model';
 import { Disruption } from '../models/disruption.model';
 import { RecoveryPlan } from '../models/recovery.model';
 
@@ -87,11 +88,80 @@ export const SEEDED_FLIGHTS: Flight[] = [
   },
 ];
 
+interface FlightApiResponse {
+  id: string;
+  route: string;
+  originCode: string;
+  origin: string;
+  destinationCode: string;
+  destination: string;
+  scheduledDeparture: string;
+  estimatedDeparture: string;
+  scheduledArrival: string;
+  estimatedArrival: string;
+  aircraftRegistration: string;
+  aircraftType: string;
+  gate: string;
+  status: 'OnTime' | 'Delayed' | 'Boarding' | 'AtRisk' | 'Cancelled';
+  risk: number;
+  delayMinutes: number;
+  passengers: number;
+  connectingPassengers: number;
+  riskLabel: string;
+}
+
+export type FlightDataSource = 'loading' | 'backend' | 'fallback';
+
 @Injectable({ providedIn: 'root' })
 export class FlightApiService {
   readonly state = signal<Flight[]>(SEEDED_FLIGHTS.map((flight) => ({ ...flight })));
+  readonly source = signal<FlightDataSource>('fallback');
+  readonly connectionError = signal<string | null>(null);
+
+  constructor(private readonly http?: HttpClient) {}
+
   getFlights(): Observable<Flight[]> {
-    return of(this.state()).pipe(delay(250));
+    if (!this.http) return of(this.state()).pipe(delay(250));
+
+    this.source.set('loading');
+    this.connectionError.set(null);
+    return this.http.get<FlightApiResponse[]>('/api/flights').pipe(
+      map(responses => responses.map(response => this.toFlight(response))),
+      tap(flights => {
+        this.state.set(flights);
+        this.source.set('backend');
+      }),
+      catchError(() => {
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration flight data.');
+        return of(this.state());
+      })
+    );
+  }
+
+  getFlight(id: string): Observable<Flight> {
+    const fallback = this.state().find(flight => flight.id.toUpperCase() === id.toUpperCase());
+    if (!this.http) {
+      return fallback
+        ? of(fallback).pipe(delay(150))
+        : throwError(() => new Error(`Flight '${id}' was not found.`));
+    }
+
+    return this.http.get<FlightApiResponse>(`/api/flights/${encodeURIComponent(id)}`).pipe(
+      map(response => this.toFlight(response)),
+      tap(flight => {
+        this.state.update(flights => [flight, ...flights.filter(item => item.id !== flight.id)]);
+        this.source.set('backend');
+        this.connectionError.set(null);
+      }),
+      catchError(error => {
+        if (!fallback || (error instanceof HttpErrorResponse && error.status === 404))
+          return throwError(() => error);
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration flight data.');
+        return of(fallback);
+      })
+    );
   }
   reset() {
     this.state.set(SEEDED_FLIGHTS.map((flight) => ({ ...flight })));
@@ -142,5 +212,35 @@ export class FlightApiService {
   private nextGate(gate: string) {
     const match = gate.match(/^(\D+)(\d+)$/);
     return match ? `${match[1]}${Number(match[2]) + 2}` : gate;
+  }
+
+  private toFlight(response: FlightApiResponse): Flight {
+    const statuses: Record<FlightApiResponse['status'], FlightStatus> = {
+      OnTime: 'On time',
+      Delayed: 'Delayed',
+      Boarding: 'Boarding',
+      AtRisk: 'At risk',
+      Cancelled: 'Cancelled',
+    };
+    return {
+      id: response.id,
+      route: response.route,
+      origin: response.origin,
+      destination: response.destination,
+      departure: this.toClockTime(response.scheduledDeparture),
+      arrival: this.toClockTime(response.estimatedArrival),
+      aircraft: `${response.aircraftType} · ${response.aircraftRegistration}`,
+      gate: response.gate,
+      status: statuses[response.status],
+      risk: response.risk,
+      passengers: response.passengers,
+      connections: response.connectingPassengers,
+      delay: response.delayMinutes,
+      riskLabel: response.riskLabel,
+    };
+  }
+
+  private toClockTime(timestamp: string) {
+    return timestamp.match(/T(\d{2}:\d{2})/)?.[1] ?? timestamp;
   }
 }

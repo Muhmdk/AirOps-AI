@@ -1,4 +1,4 @@
-export type FlightStatus = 'On time' | 'Delayed' | 'Boarding' | 'At risk';
+export type FlightStatus = 'On time' | 'Delayed' | 'Boarding' | 'At risk' | 'Cancelled';
 
 export interface Flight {
   id: string;

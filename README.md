@@ -119,7 +119,7 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 
 ## Current verification
 
-- 16 Angular unit and service-level tests
+- 20 Angular unit and service-level tests
 - 32 backend integration tests
 - 5 Cypress end-to-end controller journeys
 - Successful Angular production build
@@ -151,7 +151,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Restart-safe recovery projection across flights, airports, and aircraft assignments
 - SignalR operational event hub that broadcasts only committed database events
 - Angular event history loading, live updates, reconnect state, and offline fallback
+- Backend-powered Angular flight collection, direct flight detail, and network-summary KPIs
+- Explicit API contract mapping and offline demonstration fallback for flight operations
 
 ## Planned architecture
 
-The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The operational timeline now uses the backend API and SignalR hub; the remaining Angular workspaces still use typed browser-side services while their API integrations are built incrementally.
+The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The operational timeline, flight collection/detail, and overview network KPIs now use backend APIs. The remaining Angular disruption, recovery, airport, and aircraft workspaces still use typed browser-side services while their API integrations are built incrementally.
