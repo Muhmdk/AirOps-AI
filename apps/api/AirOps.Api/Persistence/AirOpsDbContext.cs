@@ -15,6 +15,7 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
     public DbSet<OperationalEvent> OperationalEvents => Set<OperationalEvent>();
     public DbSet<SimulationClockState> SimulationClocks => Set<SimulationClockState>();
     public DbSet<Disruption> Disruptions => Set<Disruption>();
+    public DbSet<DisruptionAuditEntry> DisruptionAuditEntries => Set<DisruptionAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -217,5 +218,34 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
         crew.HasOne<Disruption>().WithMany(item => item.CrewDetails)
             .HasForeignKey(item => item.DisruptionId).OnDelete(DeleteBehavior.Cascade);
         crew.HasIndex(item => new { item.DisruptionId, item.Sequence }).IsUnique();
+
+        var audit = modelBuilder.Entity<DisruptionAuditEntry>();
+        audit.ToTable("disruption_audit_entries");
+        audit.HasKey(item => item.Id);
+        audit.Property(item => item.Id).HasColumnName("id");
+        audit.Property(item => item.DisruptionId).HasColumnName("disruption_id").HasMaxLength(12);
+        audit.Property(item => item.Action).HasColumnName("action").HasConversion<string>().HasMaxLength(20);
+        audit.Property(item => item.Actor).HasColumnName("actor").HasMaxLength(80);
+        audit.Property(item => item.Timestamp).HasColumnName("timestamp");
+        audit.Property(item => item.Summary).HasColumnName("summary").HasMaxLength(240);
+        audit.HasOne<Disruption>().WithMany().HasForeignKey(item => item.DisruptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+        audit.HasIndex(item => item.DisruptionId);
+        audit.HasIndex(item => item.Timestamp);
+
+        var mutation = modelBuilder.Entity<NetworkMutation>();
+        mutation.ToTable("disruption_network_mutations");
+        mutation.HasKey(item => item.Id);
+        mutation.Property(item => item.Id).HasColumnName("id");
+        mutation.Property(item => item.AuditEntryId).HasColumnName("audit_entry_id");
+        mutation.Property(item => item.EntityType).HasColumnName("entity_type").HasMaxLength(20);
+        mutation.Property(item => item.EntityId).HasColumnName("entity_id").HasMaxLength(20);
+        mutation.Property(item => item.Field).HasColumnName("field").HasMaxLength(40);
+        mutation.Property(item => item.BeforeValue).HasColumnName("before_value").HasMaxLength(160);
+        mutation.Property(item => item.AfterValue).HasColumnName("after_value").HasMaxLength(160);
+        mutation.HasOne<DisruptionAuditEntry>().WithMany(item => item.Changes)
+            .HasForeignKey(item => item.AuditEntryId).OnDelete(DeleteBehavior.Cascade);
+        mutation.HasIndex(item => item.AuditEntryId);
+        mutation.HasIndex(item => new { item.EntityType, item.EntityId });
     }
 }

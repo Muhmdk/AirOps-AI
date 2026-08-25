@@ -4,7 +4,7 @@ namespace AirOps.Api.Persistence;
 
 public static class AircraftSeed
 {
-    public static IReadOnlyList<Aircraft> All { get; } =
+    public static IReadOnlyList<Aircraft> All =>
     [
         new("C-FVLX", "Boeing 787-9", AircraftFamily.Widebody, AircraftStatus.InService,
             "YYZ", "AC103", new TimeOnly(9, 15), 87, 2, 13.4m, 146, 94, 298, 14140),

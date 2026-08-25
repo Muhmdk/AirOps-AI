@@ -41,6 +41,15 @@ public sealed class EfDisruptionRepository(AirOpsDbContext database) : IDisrupti
         return $"DSP-{next:000}";
     }
 
+    public async Task<IReadOnlyList<DisruptionAuditEntry>> GetAuditAsync(
+        string disruptionId,
+        CancellationToken cancellationToken) =>
+        await database.DisruptionAuditEntries.AsNoTracking()
+            .Where(item => item.DisruptionId == disruptionId.ToUpperInvariant())
+            .Include(item => item.Changes)
+            .OrderByDescending(item => item.Timestamp)
+            .ToListAsync(cancellationToken);
+
     public void Add(Disruption disruption) => database.Disruptions.Add(disruption);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>

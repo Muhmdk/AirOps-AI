@@ -53,7 +53,7 @@ public sealed class OperationsEndpointsTests : IClassFixture<AirOpsApiFactory>
         Assert.NotNull(fleet);
         Assert.Equal(6, fleet.Count);
         Assert.Contains(fleet, aircraft =>
-            aircraft.Registration == "C-FVLX" && aircraft.Status == "In service");
+            aircraft.Registration == "C-FVLX" && aircraft.Status == "Turnaround");
     }
 
     [Fact]

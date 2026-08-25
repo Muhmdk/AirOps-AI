@@ -9,6 +9,7 @@ public static class DisruptionEndpoints
         var group = endpoints.MapGroup("/api/disruptions").WithTags("Disruptions");
         group.MapGet("/", GetDisruptions).WithName("GetDisruptions");
         group.MapGet("/{id}", GetDisruption).WithName("GetDisruption");
+        group.MapGet("/{id}/audit", GetDisruptionAudit).WithName("GetDisruptionAudit");
         group.MapPost("/", CreateDisruption).WithName("CreateDisruption");
         group.MapPost("/{id}/resolve", ResolveDisruption).WithName("ResolveDisruption");
         return endpoints;
@@ -38,6 +39,19 @@ public static class DisruptionEndpoints
         return disruption is null
             ? Results.NotFound(new { message = $"Disruption '{id}' was not found." })
             : Results.Ok(disruption.ToResponse());
+    }
+
+    private static async Task<IResult> GetDisruptionAudit(
+        string id,
+        IDisruptionRepository repository,
+        CancellationToken cancellationToken)
+    {
+        var disruption = await repository.GetByIdAsync(id, cancellationToken);
+        if (disruption is null)
+            return Results.NotFound(new { message = $"Disruption '{id}' was not found." });
+
+        var entries = await repository.GetAuditAsync(id, cancellationToken);
+        return Results.Ok(entries.Select(item => item.ToResponse()));
     }
 
     private static async Task<IResult> CreateDisruption(

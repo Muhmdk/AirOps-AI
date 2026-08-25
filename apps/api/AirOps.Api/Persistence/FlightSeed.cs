@@ -7,7 +7,7 @@ public static class FlightSeed
     private static readonly DateTimeOffset OperationDate =
         new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.FromHours(-4)).ToUniversalTime();
 
-    public static IReadOnlyList<Flight> All { get; } =
+    public static IReadOnlyList<Flight> All =>
     [
         Create("AC103", "YYZ", "Toronto", "YVR", "Vancouver", 9, 15, 11, 28,
             "C-FVLX", "Boeing 787-9", "D24", FlightStatus.AtRisk, 82, 68, 286, 47,

@@ -59,7 +59,7 @@ public sealed class FlightEndpointsTests : IClassFixture<AirOpsApiFactory>
 
         Assert.NotNull(summary);
         Assert.Equal(5, summary.FlightsToday);
-        Assert.Equal(2, summary.AtRisk);
+        Assert.Equal(3, summary.AtRisk);
         Assert.Equal(2, summary.HighRisk);
         Assert.Equal(1178, summary.Passengers);
         Assert.InRange(summary.NetworkHealth, 0, 100);

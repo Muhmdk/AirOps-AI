@@ -1,3 +1,4 @@
+using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Operations;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,19 @@ public static class DatabaseInitialiser
             database.SimulationClocks.Add(new SimulationClockState(DateTimeOffset.UtcNow));
         if (!await database.Disruptions.AnyAsync())
             database.Disruptions.AddRange(DisruptionSeed.All);
+        await database.SaveChangesAsync();
+
+        var activeDisruptions = await database.Disruptions.AsNoTracking()
+            .Where(item => item.Status == DisruptionStatus.Active)
+            .Include(item => item.Flights)
+            .Include(item => item.Connections)
+            .Include(item => item.GateDetails)
+            .Include(item => item.CrewDetails)
+            .AsSplitQuery()
+            .OrderByDescending(item => item.StartedAt)
+            .ToListAsync();
+        var network = await NetworkStateProjector.LoadAsync(database, CancellationToken.None);
+        NetworkStateProjector.Project(network, activeDisruptions);
         await database.SaveChangesAsync();
     }
 }

@@ -4,7 +4,7 @@ namespace AirOps.Api.Persistence;
 
 public static class AirportSeed
 {
-    public static IReadOnlyList<Airport> All { get; } =
+    public static IReadOnlyList<Airport> All =>
     [
         new("YYZ", "Toronto Pearson International", "Toronto", "ON", "EDT",
             AirportRisk.High, 62, 38, 184, 177, 12, 58, 65, "Thunderstorms", 24,

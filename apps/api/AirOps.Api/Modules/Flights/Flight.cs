@@ -68,4 +68,33 @@ public sealed class Flight
     public DateTimeOffset EstimatedDeparture => ScheduledDeparture.AddMinutes(DelayMinutes);
     public DateTimeOffset EstimatedArrival => ScheduledArrival.AddMinutes(DelayMinutes);
     public string Route => $"{OriginCode} → {DestinationCode}";
+
+    public void RestoreOperationalState(
+        FlightStatus status,
+        int risk,
+        int delayMinutes,
+        string riskLabel)
+    {
+        Status = status;
+        Risk = risk;
+        DelayMinutes = delayMinutes;
+        RiskLabel = riskLabel;
+    }
+
+    public void ApplyDisruption(
+        int propagatedDelay,
+        string disruptionType,
+        string baselineRiskLabel)
+    {
+        var overlapping = RiskLabel != baselineRiskLabel;
+        var delay = Math.Max(DelayMinutes, propagatedDelay);
+        var risk = Math.Max(Risk, 55 + (int)Math.Round(
+            propagatedDelay / 2d, MidpointRounding.AwayFromZero));
+        DelayMinutes = overlapping
+            ? delay + (int)Math.Round(propagatedDelay * 0.2, MidpointRounding.AwayFromZero)
+            : delay;
+        Risk = Math.Min(99, risk + (overlapping ? 8 : 0));
+        Status = propagatedDelay >= 30 ? FlightStatus.AtRisk : FlightStatus.Delayed;
+        RiskLabel = overlapping ? $"{RiskLabel} + {disruptionType}" : disruptionType;
+    }
 }

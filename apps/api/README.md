@@ -28,6 +28,7 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `GET /api/disruptions/{id}`
 - `POST /api/disruptions`
 - `POST /api/disruptions/{id}/resolve`
+- `GET /api/disruptions/{id}/audit`
 
 Flight list query parameters:
 
@@ -40,6 +41,8 @@ Airport queries support `search` and `risk`. Aircraft queries support `search`, 
 Operational events support `severity`, `category`, and `limit` filters. The simulation clock starts paused at the deterministic demonstration time. Manual advancement and the five-second background ticker publish flight-departure milestones exactly once.
 
 Disruption queries support `status`, `severity`, and `airport`. Creating a disruption validates its flight and airport, persists detailed aircraft-rotation, passenger-connection, gate-conflict, crew-duty, cost, and recovery impacts, and publishes an operational event. Resolving a disruption is idempotent and records one resolution event.
+
+Active disruptions are projected into persistent flight, airport, and aircraft operational state. Every creation or resolution recomputes the state from the deterministic baseline and all remaining active disruptions, preserving overlapping effects. Field-level before-and-after mutations are stored in the disruption audit trail.
 
 ## Test
 

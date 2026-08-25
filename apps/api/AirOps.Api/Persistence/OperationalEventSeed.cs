@@ -7,7 +7,7 @@ public static class OperationalEventSeed
     private static readonly DateTimeOffset OperationDate =
         new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.FromHours(-4)).ToUniversalTime();
 
-    public static IReadOnlyList<OperationalEvent> All { get; } =
+    public static IReadOnlyList<OperationalEvent> All =>
     [
         Create(1, 9, 8, OperationalEventType.Risk, "Weather risk raised",
             "Toronto Pearson · Severe thunderstorm cell", "amber",

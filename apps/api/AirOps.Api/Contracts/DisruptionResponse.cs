@@ -71,3 +71,19 @@ public sealed record CrewDutyImpactResponse(
     int LegalLimitMinutes,
     int RemainingMinutes,
     string Status);
+
+public sealed record DisruptionAuditResponse(
+    Guid Id,
+    string DisruptionId,
+    string Action,
+    string Actor,
+    DateTimeOffset Timestamp,
+    string Summary,
+    IReadOnlyList<NetworkMutationResponse> Changes);
+
+public sealed record NetworkMutationResponse(
+    string EntityType,
+    string EntityId,
+    string Field,
+    string Before,
+    string After);

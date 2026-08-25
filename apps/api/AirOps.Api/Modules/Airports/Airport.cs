@@ -66,4 +66,39 @@ public sealed class Airport
     public int Temperature { get; private set; }
     public string Wind { get; private set; } = string.Empty;
     public string Visibility { get; private set; } = string.Empty;
+
+    public void RestoreOperationalState(
+        AirportRisk risk,
+        int health,
+        int averageDelay,
+        int atRisk,
+        int gatesUsed,
+        string weather)
+    {
+        Risk = risk;
+        Health = health;
+        AverageDelay = averageDelay;
+        AtRisk = atRisk;
+        GatesUsed = gatesUsed;
+        Weather = weather;
+    }
+
+    public void ApplyDisruption(
+        bool moderate,
+        bool severeWeather,
+        int durationMinutes,
+        int recoveryMinutes,
+        int affectedFlights,
+        int gateConflicts)
+    {
+        Risk = moderate ? AirportRisk.Moderate : AirportRisk.High;
+        Health = Math.Max(30, Health - (int)Math.Round(
+            durationMinutes / 18d, MidpointRounding.AwayFromZero));
+        AverageDelay = Math.Max(AverageDelay, (int)Math.Round(
+            recoveryMinutes * 0.42, MidpointRounding.AwayFromZero));
+        AtRisk += affectedFlights;
+        GatesUsed = Math.Min(GatesTotal, GatesUsed + gateConflicts);
+        if (severeWeather)
+            Weather = "Severe thunderstorms";
+    }
 }

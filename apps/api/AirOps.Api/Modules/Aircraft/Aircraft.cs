@@ -64,4 +64,29 @@ public sealed class Aircraft
     public int Health { get; private set; }
     public int Seats { get; private set; }
     public int RangeKilometres { get; private set; }
+
+    public void RestoreOperationalState(
+        AircraftStatus status,
+        int health,
+        int utilization,
+        int maintenanceDue)
+    {
+        Status = status;
+        Health = health;
+        Utilization = utilization;
+        MaintenanceDue = maintenanceDue;
+    }
+
+    public void ApplyDisruption(
+        bool maintenance,
+        bool critical,
+        int durationMinutes)
+    {
+        Status = maintenance ? AircraftStatus.Unavailable : AircraftStatus.Turnaround;
+        Health = Math.Max(35, Health - (critical ? 28 : 16));
+        Utilization = Math.Max(0, Utilization - (int)Math.Round(
+            durationMinutes / 10d, MidpointRounding.AwayFromZero));
+        if (maintenance)
+            MaintenanceDue = 0;
+    }
 }

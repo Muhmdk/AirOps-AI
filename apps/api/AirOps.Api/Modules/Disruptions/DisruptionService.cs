@@ -24,6 +24,8 @@ public sealed class DisruptionService(
     IAirportRepository airports,
     TimeProvider timeProvider)
 {
+    private const string ControllerActor = "Maya Chen";
+
     public async Task<DisruptionCreationResult> CreateAsync(
         DisruptionType type,
         DisruptionSeverity severity,
@@ -61,6 +63,21 @@ public sealed class DisruptionService(
             now,
             impact);
 
+        var network = await NetworkStateProjector.LoadAsync(database, cancellationToken);
+        var before = NetworkStateProjector.Capture(network);
+        var active = await repository.SearchAsync(
+            DisruptionStatus.Active, null, null, cancellationToken);
+        NetworkStateProjector.Project(network, [disruption, .. active]);
+        var after = NetworkStateProjector.Capture(network);
+        var auditId = Guid.NewGuid();
+        database.DisruptionAuditEntries.Add(new DisruptionAuditEntry(
+            auditId,
+            id,
+            DisruptionAuditAction.Created,
+            ControllerActor,
+            now,
+            $"Triggered {severity.ToString().ToLowerInvariant()} {type.ToDisplayName()}",
+            NetworkStateProjector.Compare(auditId, before, after)));
         repository.Add(disruption);
         database.OperationalEvents.Add(new OperationalEvent(
             Guid.NewGuid(),
@@ -93,6 +110,23 @@ public sealed class DisruptionService(
         var now = timeProvider.GetUtcNow();
         if (disruption.Resolve(now))
         {
+            var network = await NetworkStateProjector.LoadAsync(database, cancellationToken);
+            var before = NetworkStateProjector.Capture(network);
+            var active = await repository.SearchAsync(
+                DisruptionStatus.Active, null, null, cancellationToken);
+            NetworkStateProjector.Project(
+                network,
+                active.Where(item => item.Id != disruption.Id));
+            var after = NetworkStateProjector.Capture(network);
+            var auditId = Guid.NewGuid();
+            database.DisruptionAuditEntries.Add(new DisruptionAuditEntry(
+                auditId,
+                disruption.Id,
+                DisruptionAuditAction.Resolved,
+                ControllerActor,
+                now,
+                $"Resolved {disruption.Type.ToDisplayName()} affecting {disruption.PrimaryFlightId}",
+                NetworkStateProjector.Compare(auditId, before, after)));
             var operationalTime = await database.SimulationClocks
                 .Where(item => item.Id == SimulationClockState.SingletonId)
                 .Select(item => item.CurrentTime)

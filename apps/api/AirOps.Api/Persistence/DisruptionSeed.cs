@@ -7,7 +7,7 @@ public static class DisruptionSeed
     private static readonly DateTimeOffset OperationDate =
         new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.FromHours(-4)).ToUniversalTime();
 
-    public static IReadOnlyList<Disruption> All { get; } =
+    public static IReadOnlyList<Disruption> All =>
     [
         Create("DSP-001", DisruptionType.SevereWeather, DisruptionSeverity.Critical,
             "YYZ", "AC103", 9, 8, 120),

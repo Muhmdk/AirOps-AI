@@ -44,4 +44,18 @@ internal static class DisruptionMappings
                     item.LegalLimitMinutes, item.RemainingMinutes, item.Status)).ToList()),
         disruption.CreatedAt,
         disruption.ResolvedAt);
+
+    internal static DisruptionAuditResponse ToResponse(this DisruptionAuditEntry entry) => new(
+        entry.Id,
+        entry.DisruptionId,
+        entry.Action.ToString(),
+        entry.Actor,
+        entry.Timestamp,
+        entry.Summary,
+        entry.Changes.Select(item => new NetworkMutationResponse(
+            item.EntityType,
+            item.EntityId,
+            item.Field,
+            item.BeforeValue,
+            item.AfterValue)).ToList());
 }
