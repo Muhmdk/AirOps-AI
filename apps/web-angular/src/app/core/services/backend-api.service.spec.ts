@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { FlightApiService, SEEDED_FLIGHTS } from './flight-api.service';
 import { FALLBACK_NETWORK_SUMMARY, NetworkApiService } from './network-api.service';
+import { AirportApiService, SEEDED_AIRPORTS } from './airport-api.service';
+import { AircraftApiService, SEEDED_AIRCRAFT } from './aircraft-api.service';
 
 const API_FLIGHT = {
   id: 'AC103',
@@ -103,5 +105,63 @@ describe('backend API adapters', () => {
 
     expect(service.state().networkHealth).toBe(76);
     expect(service.source()).toBe('fallback');
+  });
+
+  it('loads airport operations from the backend contract', async () => {
+    const service = TestBed.inject(AirportApiService);
+    const result = firstValueFrom(service.getAirports());
+
+    http.expectOne('/api/airports').flush([
+      { ...SEEDED_AIRPORTS[0], health: 59, weather: 'Severe thunderstorms' },
+    ]);
+    const airports = await result;
+
+    expect(airports[0]).toMatchObject({ code: 'YYZ', health: 59 });
+    expect(service.state()[0].weather).toBe('Severe thunderstorms');
+    expect(service.source()).toBe('backend');
+  });
+
+  it('loads airport details independently and falls back while offline', async () => {
+    const service = TestBed.inject(AirportApiService);
+    const result = firstValueFrom(service.getAirport('yyz'));
+
+    http.expectOne('/api/airports/yyz').flush('Unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable',
+    });
+    const airport = await result;
+
+    expect(airport.code).toBe('YYZ');
+    expect(service.source()).toBe('fallback');
+    expect(service.connectionError()).toContain('Backend unavailable');
+  });
+
+  it('loads aircraft operations from the backend contract', async () => {
+    const service = TestBed.inject(AircraftApiService);
+    const result = firstValueFrom(service.getAircraft());
+
+    http.expectOne('/api/aircraft').flush([
+      { ...SEEDED_AIRCRAFT[0], utilization: 92, maintenanceDue: 120 },
+    ]);
+    const fleet = await result;
+
+    expect(fleet[0]).toMatchObject({ registration: 'C-FVLX', utilization: 92 });
+    expect(service.state()[0].maintenanceDue).toBe(120);
+    expect(service.source()).toBe('backend');
+  });
+
+  it('loads aircraft details independently and falls back while offline', async () => {
+    const service = TestBed.inject(AircraftApiService);
+    const result = firstValueFrom(service.getAircraftByRegistration('c-fvlx'));
+
+    http.expectOne('/api/aircraft/c-fvlx').flush('Unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable',
+    });
+    const aircraft = await result;
+
+    expect(aircraft.registration).toBe('C-FVLX');
+    expect(service.source()).toBe('fallback');
+    expect(service.connectionError()).toContain('Backend unavailable');
   });
 });

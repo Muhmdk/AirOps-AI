@@ -1,6 +1,7 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { delay, Observable, of } from 'rxjs';
-import { AircraftOperation } from '../models/aircraft.model';
+import { catchError, delay, map, Observable, of, tap, throwError } from 'rxjs';
+import { AircraftOperation, AircraftStatus } from '../models/aircraft.model';
 import { Disruption } from '../models/disruption.model';
 import { RecoveryPlan } from '../models/recovery.model';
 
@@ -103,13 +104,81 @@ export const SEEDED_AIRCRAFT: AircraftOperation[] = [
   },
 ];
 
+interface AircraftApiResponse {
+  registration: string;
+  type: string;
+  family: string;
+  status: AircraftStatus;
+  location: string;
+  nextFlight: string;
+  nextDeparture: string;
+  utilization: number;
+  cycles: number;
+  hours: number;
+  maintenanceDue: number;
+  health: number;
+  seats: number;
+  range: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AircraftApiService {
   readonly state = signal<AircraftOperation[]>(
     SEEDED_AIRCRAFT.map((aircraft) => ({ ...aircraft })),
   );
+  readonly source = signal<'loading' | 'backend' | 'fallback'>('fallback');
+  readonly connectionError = signal<string | null>(null);
+
+  constructor(private readonly http?: HttpClient) {}
+
   getAircraft(): Observable<AircraftOperation[]> {
-    return of(this.state()).pipe(delay(220));
+    if (!this.http) return of(this.state()).pipe(delay(220));
+
+    this.source.set('loading');
+    this.connectionError.set(null);
+    return this.http.get<AircraftApiResponse[]>('/api/aircraft').pipe(
+      map(responses => responses.map(response => ({ ...response }))),
+      tap(fleet => {
+        this.state.set(fleet);
+        this.source.set('backend');
+      }),
+      catchError(() => {
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration aircraft data.');
+        return of(this.state());
+      })
+    );
+  }
+
+  getAircraftByRegistration(registration: string): Observable<AircraftOperation> {
+    const fallback = this.state().find(aircraft =>
+      aircraft.registration.toUpperCase() === registration.toUpperCase());
+    if (!this.http) {
+      return fallback
+        ? of(fallback).pipe(delay(150))
+        : throwError(() => new Error(`Aircraft '${registration}' was not found.`));
+    }
+
+    return this.http.get<AircraftApiResponse>(
+      `/api/aircraft/${encodeURIComponent(registration)}`
+    ).pipe(
+      map(response => ({ ...response })),
+      tap(aircraft => {
+        this.state.update(fleet => [
+          aircraft,
+          ...fleet.filter(item => item.registration !== aircraft.registration),
+        ]);
+        this.source.set('backend');
+        this.connectionError.set(null);
+      }),
+      catchError(error => {
+        if (!fallback || (error instanceof HttpErrorResponse && error.status === 404))
+          return throwError(() => error);
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration aircraft data.');
+        return of(fallback);
+      })
+    );
   }
   reset() {
     this.state.set(SEEDED_AIRCRAFT.map((aircraft) => ({ ...aircraft })));

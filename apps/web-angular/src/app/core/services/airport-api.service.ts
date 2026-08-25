@@ -1,6 +1,7 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { delay, Observable, of } from 'rxjs';
-import { AirportOperation } from '../models/airport.model';
+import { catchError, delay, map, Observable, of, tap, throwError } from 'rxjs';
+import { AirportOperation, AirportRisk } from '../models/airport.model';
 import { Disruption } from '../models/disruption.model';
 import { RecoveryPlan } from '../models/recovery.model';
 
@@ -121,11 +122,82 @@ export const SEEDED_AIRPORTS: AirportOperation[] = [
   },
 ];
 
+interface AirportApiResponse {
+  code: string;
+  name: string;
+  city: string;
+  province: string;
+  timezone: string;
+  risk: AirportRisk;
+  health: number;
+  averageDelay: number;
+  departures: number;
+  arrivals: number;
+  atRisk: number;
+  gatesUsed: number;
+  gatesTotal: number;
+  weather: string;
+  temperature: number;
+  wind: string;
+  visibility: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AirportApiService {
   readonly state = signal<AirportOperation[]>(SEEDED_AIRPORTS.map((airport) => ({ ...airport })));
+  readonly source = signal<'loading' | 'backend' | 'fallback'>('fallback');
+  readonly connectionError = signal<string | null>(null);
+
+  constructor(private readonly http?: HttpClient) {}
+
   getAirports(): Observable<AirportOperation[]> {
-    return of(this.state()).pipe(delay(220));
+    if (!this.http) return of(this.state()).pipe(delay(220));
+
+    this.source.set('loading');
+    this.connectionError.set(null);
+    return this.http.get<AirportApiResponse[]>('/api/airports').pipe(
+      map(responses => responses.map(response => ({ ...response }))),
+      tap(airports => {
+        this.state.set(airports);
+        this.source.set('backend');
+      }),
+      catchError(() => {
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration airport data.');
+        return of(this.state());
+      })
+    );
+  }
+
+  getAirport(code: string): Observable<AirportOperation> {
+    const fallback = this.state().find(airport =>
+      airport.code.toUpperCase() === code.toUpperCase());
+    if (!this.http) {
+      return fallback
+        ? of(fallback).pipe(delay(150))
+        : throwError(() => new Error(`Airport '${code}' was not found.`));
+    }
+
+    return this.http.get<AirportApiResponse>(
+      `/api/airports/${encodeURIComponent(code)}`
+    ).pipe(
+      map(response => ({ ...response })),
+      tap(airport => {
+        this.state.update(airports => [
+          airport,
+          ...airports.filter(item => item.code !== airport.code),
+        ]);
+        this.source.set('backend');
+        this.connectionError.set(null);
+      }),
+      catchError(error => {
+        if (!fallback || (error instanceof HttpErrorResponse && error.status === 404))
+          return throwError(() => error);
+        this.source.set('fallback');
+        this.connectionError.set('Backend unavailable; showing demonstration airport data.');
+        return of(fallback);
+      })
+    );
   }
   reset() {
     this.state.set(SEEDED_AIRPORTS.map((airport) => ({ ...airport })));
