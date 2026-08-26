@@ -1,7 +1,7 @@
 describe('operations controller journey',()=>{
   const signIn=()=>{cy.visit('/login');cy.get('input[formcontrolname="controllerId"]').clear().type('maya.chen');cy.get('input[formcontrolname="password"]').clear().type('operations');cy.contains('button','Sign in').click();cy.url().should('include','/overview')};
   it('protects operational routes and authenticates the controller',()=>{cy.visit('/flights');cy.url().should('include','/login');cy.contains('Welcome back');cy.get('input[formcontrolname="controllerId"]').clear().type('maya.chen');cy.get('input[formcontrolname="password"]').clear().type('operations');cy.contains('button','Sign in').click();cy.url().should('include','/flights');cy.contains('h1','Flights')});
-  it('searches flights and opens flight details',()=>{signIn();cy.visit('/flights');cy.get('input[placeholder*="Search flight"]').type('AC103');cy.get('tbody tr').should('have.length',1).click();cy.url().should('include','/flights/AC103');cy.contains('Disruption risk');cy.contains('Aircraft rotation')});
+  it('searches flights and follows disruption and recovery actions',()=>{signIn();cy.visit('/flights');cy.get('input[placeholder*="Search flight"]').type('AC103');cy.get('tbody tr').should('have.length',1).click();cy.url().should('include','/flights/AC103');cy.contains('Disruption risk');cy.contains('button','Open disruption record').click();cy.url().should('include','/disruptions/DSP-001');cy.visit('/flights/AC103');cy.contains('button','Evaluate recovery options').click();cy.url().should('include','/recovery-plans/DSP-001');cy.contains('Recovery options for AC103')});
   it('opens airport and aircraft operational details',()=>{signIn();cy.visit('/airports');cy.contains('article','Toronto').click();cy.url().should('include','/airports/YYZ');cy.contains('Weather conditions');cy.visit('/aircraft');cy.contains('article','C-FVLX').click();cy.url().should('include','/aircraft/C-FVLX');cy.contains('Today’s aircraft rotation')});
   it('filters events and follows an affected entity',()=>{signIn();cy.visit('/event-timeline');cy.get('select').first().select('Critical');cy.contains('Weather risk raised').click();cy.url().should('include','/airports/YYZ')});
   it('rejects an option and completes the recovery approval workflow',()=>{
@@ -10,9 +10,17 @@ describe('operations controller journey',()=>{
     cy.get('input[formcontrolname="password"]').clear().type('operations');
     cy.contains('button','Sign in').click();
     cy.url().should('include','/overview');
-    cy.visit('/recovery-plans');
-    cy.contains('.list > article','Severe weather').click();
-    cy.url().should('include','/recovery-plans/DSP-001');
+    cy.visit('/disruptions');
+    cy.contains('button','Trigger disruption').click();
+    cy.get('select[formcontrolname="type"]').select('Gate conflict');
+    cy.get('select[formcontrolname="severity"]').select('Moderate');
+    cy.get('select[formcontrolname="airport"]').select('YYC');
+    cy.get('select[formcontrolname="flightId"]').select('AC156');
+    cy.get('input[formcontrolname="durationMinutes"]').clear().type('30');
+    cy.contains('button','Trigger and calculate impact').click();
+    cy.url().should('match',/\/disruptions\/DSP-\d+$/);
+    cy.contains('button','Generate recovery plans').click();
+    cy.url().should('match',/\/recovery-plans\/DSP-\d+$/);
     cy.contains('h2','Reassign to compatible gate').should('be.visible');
     cy.contains('.plans article','Maintain current rotation').within(()=>cy.get('[data-cy="reject-plan"]').click());
     cy.get('[data-cy="decision-notes"]').type('Operational risk exceeds the preferred threshold.');

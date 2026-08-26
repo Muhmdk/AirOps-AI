@@ -10,7 +10,7 @@
   </div><aside>
     <article class="impact"><h2>Passenger impact</h2><div class="impact-main"><strong>{{f.passengers}}</strong><span>passengers on board</span></div><div class="impact-grid"><div><b>{{f.connections}}</b><small>Connections</small></div><div><b>{{f.connections > 40 ? 18 : 9}}</b><small>Likely missed</small></div><div><b>{{f.connections > 40 ? 12 : 5}}</b><small>Rebookings</small></div><div><b>$24.8k</b><small>Est. impact</small></div></div></article>
     <article><h2>Flight information</h2><dl><div><dt>Aircraft</dt><dd>{{f.aircraft.split(' · ')[0]}}</dd></div><div><dt>Registration</dt><dd>{{f.aircraft.split(' · ')[1]}}</dd></div><div><dt>Gate</dt><dd>{{f.gate}}</dd></div><div><dt>Turnaround</dt><dd>48 minutes</dd></div><div><dt>Crew</dt><dd>12 assigned</dd></div><div><dt>Load factor</dt><dd>91%</dd></div></dl></article>
-    <button class="primary">Evaluate recovery options <span>→</span></button><button class="secondary">Open disruption record</button>
+    <button class="primary" (click)="evaluateRecovery()">Evaluate recovery options <span>→</span></button><button class="secondary" (click)="openDisruption()">Open disruption record</button>
   </aside></section>
 }@else{<section class="state"><span>?</span><h2>Flight not found</h2><p>No operation exists for {{id}} in the current simulation.</p><a routerLink="/flights">Return to flights</a></section>}
 </main>
