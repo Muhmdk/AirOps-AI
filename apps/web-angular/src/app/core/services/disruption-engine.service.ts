@@ -213,6 +213,29 @@ export class DisruptionEngineService {
     return this.disruptions().find((d) => d.id === id);
   }
 
+  hydrateDisruptions(disruptions: Disruption[]) {
+    this.disruptions.set(disruptions);
+    const highest = disruptions.reduce(
+      (max, item) => Math.max(max, Number(item.id.split('-')[1]) || 0),
+      0,
+    );
+    this.sequence.set(highest + 1);
+  }
+
+  upsertDisruption(disruption: Disruption) {
+    this.disruptions.update(items => [
+      disruption,
+      ...items.filter(item => item.id !== disruption.id),
+    ]);
+  }
+
+  hydrateAudit(disruptionId: string, entries: DisruptionAuditEntry[]) {
+    this.auditEntries.update(current => [
+      ...entries,
+      ...current.filter(entry => entry.disruptionId !== disruptionId),
+    ]);
+  }
+
   runScenario(name: string, description: string, scenario: DisruptionScenario) {
     const before = this.captureNetworkSnapshot();
     const disruption = this.create(scenario);

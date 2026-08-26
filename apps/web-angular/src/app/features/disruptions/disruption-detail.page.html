@@ -1,6 +1,6 @@
 <main>
   <header>
-    <a routerLink="/disruptions">← All disruptions</a><span><i></i> Impact engine online</span>
+    <a routerLink="/disruptions">← All disruptions</a><span><i></i> {{api.source() === 'backend' ? 'Backend impact engine' : 'Browser impact engine'}}</span>
   </header>
   @if (disruption(); as d) {
     <section class="hero">
@@ -12,7 +12,7 @@
           <h1>{{ d.type }}</h1>
           <b>{{ d.airport }} · Primary flight {{ d.primaryFlight }} · Started {{ d.startedAt }}</b>
         </div>
-        <button (click)="resolve()">Mark resolved</button>
+        <button (click)="resolve()" [disabled]="resolving()">{{resolving() ? 'Resolving…' : 'Mark resolved'}}</button>
       </div>
     </section>
     <section class="content">

@@ -119,7 +119,7 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 
 ## Current verification
 
-- 24 Angular unit and service-level tests
+- 28 Angular unit and service-level tests
 - 32 backend integration tests
 - 5 Cypress end-to-end controller journeys
 - Successful Angular production build
@@ -155,7 +155,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Explicit API contract mapping and offline demonstration fallback for flight operations
 - Backend-powered airport and aircraft collection/detail workspaces
 - Airport and fleet API synchronization status with offline demonstration fallback
+- Backend-powered disruption list, detail, creation, audit, impact, and resolution workflow
+- Browser disruption-engine fallback for API outages and local scenario-lab runs
 
 ## Planned architecture
 
-The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The operational timeline, flight, airport, aircraft, and overview KPI workspaces now use backend APIs. The remaining Angular disruption and recovery workflows still use typed browser-side services while their API integrations are built incrementally.
+The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The operational timeline, flight, airport, aircraft, disruption, and overview KPI workspaces now use backend APIs. The remaining Angular recovery workflow still uses typed browser-side services while its API integration is built.

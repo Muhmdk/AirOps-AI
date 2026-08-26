@@ -19,7 +19,7 @@ corepack pnpm install
 corepack pnpm start
 ```
 
-Open `http://localhost:4200/`. The development proxy sends REST and SignalR traffic to the API on port 5000. Flight, airport, and aircraft collection/detail screens, overview network metrics, and the event timeline use the backend. If the API is unavailable, the affected screens retain seeded demonstration data and report their offline state.
+Open `http://localhost:4200/`. The development proxy sends REST and SignalR traffic to the API on port 5000. Flight, airport, aircraft, and disruption workflows, overview network metrics, and the event timeline use the backend. If the API is unavailable, the affected screens retain seeded demonstration data or the browser disruption engine and report their offline state.
 
 ## Code scaffolding
 
