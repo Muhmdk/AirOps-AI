@@ -148,8 +148,10 @@
               </div>
             </dl>
           </article>
-          <button>Generate recovery plans →</button>
-          <p>Recovery recommendation generation will be introduced in Phase 4.</p>
+          <button [disabled]="generatingRecovery()" (click)="generateRecoveryPlans()">
+            {{ generatingRecovery() ? 'Generating recovery plans…' : 'Generate recovery plans →' }}
+          </button>
+          <p>Compare backend-generated recovery options and record the controller decision.</p>
         </aside>
       </div>
     </section>

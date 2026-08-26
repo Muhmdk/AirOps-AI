@@ -124,9 +124,9 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 - 5 Cypress end-to-end controller journeys
 - Successful Angular production build
 
-The current MVP remains a frontend simulation backed by typed in-memory services and browser persistence. The next platform milestone is the modular backend, database, simulation API, and event broker.
+The current MVP is an API-backed operational command center with PostgreSQL persistence, deterministic simulation services, and deliberate browser fallbacks for offline demonstrations and the local Scenario Lab.
 
-## Backend foundation progress
+## Phase 5 — Complete
 
 - ASP.NET Core modular-monolith application in `apps/api`
 - Health, flight collection, flight detail, and network-summary endpoints
@@ -160,6 +160,9 @@ The current MVP remains a frontend simulation backed by typed in-memory services
 - Backend-powered recovery generation, comparison, approval, rejection, and decision audit
 - Full candidate refresh after recovery decisions with supervisor authorization support
 - Browser recovery-engine fallback for backend outages
+- Browser-validated controller journey from sign-in through disruption creation, backend impact calculation, recovery approval, immutable decision logging, and live SignalR event delivery
+
+The Phase 5 completion condition is satisfied: every primary controller workspace is backed by the modular API and PostgreSQL, while the full disruption-to-recovery workflow is persisted, auditable, and reflected in the live event stream.
 
 ## Planned architecture
 
