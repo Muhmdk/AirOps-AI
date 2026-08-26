@@ -10,7 +10,7 @@
       ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
       ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
     </nav>
-    <div class="system"><i></i><b>Recommendation engine ready</b></div>
+    <div class="system"><i></i><b>{{api.source() === 'backend' ? 'Backend recommendation engine' : 'Browser recommendation engine'}}</b></div>
   </aside>
   <main>
     <header>
@@ -81,7 +81,7 @@
               @if (recovery.plans()[d.id]) {
                 <span class="generated">✓ {{ recovery.plans()[d.id].length }} plans ready</span>
               } @else {
-                <span class="new">Generate plans</span>
+                <span class="new">{{generating() === d.id ? 'Generating…' : 'Generate plans'}}</span>
               }
               <strong>›</strong>
             </article>

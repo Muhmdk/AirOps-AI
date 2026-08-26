@@ -8,6 +8,8 @@ import { AirportApiService, SEEDED_AIRPORTS } from './airport-api.service';
 import { AircraftApiService, SEEDED_AIRCRAFT } from './aircraft-api.service';
 import { DisruptionApiService } from './disruption-api.service';
 import { DisruptionEngineService } from './disruption-engine.service';
+import { RecoveryApiService } from './recovery-api.service';
+import { RecoveryEngineService } from './recovery-engine.service';
 
 const API_FLIGHT = {
   id: 'AC103',
@@ -259,6 +261,100 @@ describe('backend API adapters', () => {
 
     expect((await result).type).toBe('Gate conflict');
     expect(engine.disruptions()).toHaveLength(before + 1);
+    expect(service.source()).toBe('fallback');
+  });
+
+  it('generates and hydrates backend recovery candidates', async () => {
+    const disruptions = new DisruptionEngineService();
+    const recovery = new RecoveryEngineService(disruptions, new AircraftApiService());
+    const service = new RecoveryApiService(recovery, TestBed.inject(HttpClient));
+    const plan = recovery.generate(disruptions.get('DSP-001')!)[0];
+    recovery.hydratePlans('DSP-001', []);
+    const result = firstValueFrom(service.generate('DSP-001'));
+
+    const request = http.expectOne('/api/disruptions/DSP-001/recovery-plans/generate');
+    expect(request.request.method).toBe('POST');
+    request.flush([{ ...plan, requiresSupervisor: false }]);
+    const plans = await result;
+
+    expect(plans).toHaveLength(1);
+    expect(recovery.plans()['DSP-001'][0].id).toBe(plan.id);
+    expect(service.source()).toBe('backend');
+  });
+
+  it('approves a plan and refreshes all backend candidate statuses', async () => {
+    const disruptions = new DisruptionEngineService();
+    const recovery = new RecoveryEngineService(disruptions, new AircraftApiService());
+    const service = new RecoveryApiService(recovery, TestBed.inject(HttpClient));
+    const candidates = recovery.generate(disruptions.get('DSP-001')!);
+    const selected = candidates[0];
+    const approved = { ...selected, status: 'Approved' as const };
+    const rejected = candidates.slice(1).map(plan => ({
+      ...plan,
+      status: 'Rejected' as const,
+      recommended: false,
+    }));
+    const audit = {
+      id: 'f8ad3828-bb7c-4c99-88db-f921112cad93',
+      planId: selected.id,
+      disruptionId: selected.disruptionId,
+      action: 'Approved' as const,
+      actor: 'Maya Chen',
+      actorRole: 'Operations Controller',
+      timestamp: '2026-08-06T09:30:00-04:00',
+      notes: 'Protect the rotation.',
+      supervisorOverride: false,
+      outcome: { delayBefore: 91, delayAfter: 31, costBefore: 100000, costAfter: 62000, missedBefore: 59, missedAfter: 14 },
+    };
+    const result = firstValueFrom(service.approve(selected, audit.notes, false));
+
+    const decision = http.expectOne(`/api/recovery-plans/${selected.id}/approve`);
+    expect(decision.request.body).toEqual({ notes: audit.notes, supervisorOverride: false });
+    decision.flush({ plan: approved, audit });
+    http.expectOne('/api/disruptions/DSP-001/recovery-plans').flush([approved, ...rejected]);
+    await result;
+
+    expect(recovery.getPlan(selected.id)?.status).toBe('Approved');
+    expect(recovery.plans()['DSP-001'].filter(plan => plan.status === 'Rejected')).toHaveLength(5);
+    expect(recovery.auditEntries()[0].notes).toBe('Protect the rotation.');
+  });
+
+  it('loads the immutable backend recovery decision log', async () => {
+    const disruptions = new DisruptionEngineService();
+    const recovery = new RecoveryEngineService(disruptions, new AircraftApiService());
+    const service = new RecoveryApiService(recovery, TestBed.inject(HttpClient));
+    const result = firstValueFrom(service.getDecisionLog());
+    const entry = {
+      id: 'e661c4c2-c69f-4ba0-9380-aa1d991c52f1',
+      planId: 'RCP-001-2',
+      disruptionId: 'DSP-001',
+      action: 'Rejected' as const,
+      actor: 'Maya Chen',
+      actorRole: 'Operations Controller',
+      timestamp: '2026-08-06T09:25:00-04:00',
+      notes: 'Insufficient connection protection.',
+      supervisorOverride: false,
+      outcome: { delayBefore: 91, delayAfter: 91, costBefore: 100000, costAfter: 100000, missedBefore: 59, missedAfter: 59 },
+    };
+
+    http.expectOne('/api/recovery-decisions').flush([entry]);
+
+    expect(await result).toEqual([entry]);
+    expect(recovery.auditEntries()[0].action).toBe('Rejected');
+  });
+
+  it('generates recovery plans locally during backend outages', async () => {
+    const disruptions = new DisruptionEngineService();
+    const recovery = new RecoveryEngineService(disruptions, new AircraftApiService());
+    const service = new RecoveryApiService(recovery, TestBed.inject(HttpClient));
+    const result = firstValueFrom(service.generate('DSP-001'));
+
+    http.expectOne('/api/disruptions/DSP-001/recovery-plans/generate').flush('Unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable',
+    });
+
+    expect((await result).length).toBeGreaterThanOrEqual(3);
     expect(service.source()).toBe('fallback');
   });
 });

@@ -185,7 +185,30 @@ export class RecoveryEngineService {
     return plans;
   }
   requiresSupervisor(plan: RecoveryPlan) {
-    return plan.operationalRisk === 'High' || plan.estimatedCost >= 75000;
+    return plan.requiresSupervisor ??
+      (plan.operationalRisk === 'High' || plan.estimatedCost >= 75000);
+  }
+  hydratePlans(disruptionId: string, plans: RecoveryPlan[]) {
+    this.plans.update(state => ({ ...state, [disruptionId]: plans }));
+  }
+  upsertPlan(plan: RecoveryPlan) {
+    const existing = this.plans()[plan.disruptionId] ?? [];
+    this.hydratePlans(plan.disruptionId, [
+      plan,
+      ...existing.filter(item => item.id !== plan.id),
+    ]);
+  }
+  hydrateAudit(entries: RecoveryAuditEntry[]) {
+    this.auditEntries.set(entries);
+  }
+  prependAudit(entry: RecoveryAuditEntry) {
+    this.auditEntries.update(entries => [
+      entry,
+      ...entries.filter(item => item.id !== entry.id),
+    ]);
+  }
+  getPlan(id: string) {
+    return this.findPlan(id);
   }
   approve(planId: string, notes: string, supervisorOverride = false) {
     const plan = this.findPlan(planId);
