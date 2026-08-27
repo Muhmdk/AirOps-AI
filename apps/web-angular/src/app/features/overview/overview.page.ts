@@ -10,6 +10,8 @@ import { FlightsActions } from '../../store/flights/flights.actions';
 import { flightsFeature } from '../../store/flights/flights.reducer';
 import { AuthService } from '../../core/services/auth.service';
 import { NetworkApiService } from '../../core/services/network-api.service';
+import { DisruptionApiService } from '../../core/services/disruption-api.service';
+import { DisruptionEngineService } from '../../core/services/disruption-engine.service';
 
 @Component({
   selector: 'app-overview-page',
@@ -23,6 +25,8 @@ export class OverviewPage {
   private readonly operations = inject(OperationsEventService);
   readonly auth = inject(AuthService);
   private readonly networkApi = inject(NetworkApiService);
+  private readonly disruptionApi = inject(DisruptionApiService);
+  private readonly disruptionEngine = inject(DisruptionEngineService);
   readonly flights = this.store.selectSignal(flightsFeature.selectAll);
   readonly filteredFlights = this.store.selectSignal(flightsFeature.selectFilteredFlights);
   readonly selected = this.store.selectSignal(flightsFeature.selectSelectedFlight);
@@ -45,10 +49,10 @@ export class OverviewPage {
     };
   });
   activeNav = signal('Overview');
-  toast = signal('');
   constructor() {
     this.store.dispatch(FlightsActions.load());
     this.networkApi.load();
+    this.disruptionApi.getDisruptions().subscribe({ error: () => undefined });
   }
   setSearch(search: string) { this.store.dispatch(FlightsActions.setSearch({ search })); }
   selectFlight(flight: Flight) { this.router.navigate(['/flights', flight.id]); }
@@ -58,9 +62,22 @@ export class OverviewPage {
     const route = item.toLowerCase().replaceAll(' ', '-');
     if (item !== 'Overview') this.router.navigate(['/', route]);
   }
-  notify(message: string) {
-    this.toast.set(message);
-    setTimeout(() => this.toast.set(''), 2600);
+  openAirport(code: string) { this.router.navigate(['/airports', code]); }
+  openWeatherFlights() {
+    this.router.navigate(['/flights'], { queryParams: { search: 'YYZ' } });
+  }
+  openScenarioLab() {
+    this.router.navigate(['/disruptions/scenarios']);
+  }
+  openRecovery(flightId: string) {
+    const matches = this.disruptionEngine.disruptions().filter(disruption =>
+      disruption.primaryFlight === flightId ||
+      disruption.impact.flights.some(flight => flight.id === flightId)
+    );
+    const disruption = matches.find(item => item.status !== 'Resolved') ?? matches[0];
+    this.router.navigate(disruption
+      ? ['/recovery-plans', disruption.id]
+      : ['/flights', flightId]);
   }
   signOut() { this.auth.signOut(); }
 }

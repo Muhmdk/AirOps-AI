@@ -18,6 +18,12 @@ export class AircraftDetailPage {
   readonly assigned = computed(() =>
     this.flightApi.state().filter(flight => flight.aircraft.includes(this.registration))
   );
+  readonly disruptionFlightId = computed(() => {
+    const aircraft = this.aircraft();
+    if (!aircraft) return '';
+    return this.assigned()[0]?.id ?? this.flightApi.state()
+      .find(flight => flight.route.startsWith(`${aircraft.location} →`))?.id ?? '';
+  });
   readonly loading = signal(true);
 
   constructor() {

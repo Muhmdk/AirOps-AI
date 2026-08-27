@@ -19,6 +19,7 @@ export class RecoveryPlansPage {
   private readonly disruptionApi = inject(DisruptionApiService);
   private readonly router = inject(Router);
   readonly generating = signal('');
+  readonly error = signal('');
 
   constructor() {
     this.disruptionApi.getDisruptions().subscribe({ error: () => undefined });
@@ -28,9 +29,13 @@ export class RecoveryPlansPage {
   open(disruption: Disruption) {
     if (this.generating()) return;
     this.generating.set(disruption.id);
+    this.error.set('');
     this.api.generate(disruption.id).subscribe({
       next: () => this.router.navigate(['/recovery-plans', disruption.id]),
-      error: () => this.generating.set(''),
+      error: () => {
+        this.error.set(`Unable to generate recovery plans for ${disruption.id}. Check the backend connection and try again.`);
+        this.generating.set('');
+      },
       complete: () => this.generating.set(''),
     });
   }

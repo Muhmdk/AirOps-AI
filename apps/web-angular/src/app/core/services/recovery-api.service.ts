@@ -27,6 +27,7 @@ export class RecoveryApiService {
       tap(plans => {
         this.engine.hydratePlans(disruptionId, plans);
         this.source.set('backend');
+        this.connectionError.set(null);
       }),
       catchError(error => this.isOffline(error)
         ? this.offline(this.engine.plans()[disruptionId] ?? [])
@@ -43,6 +44,7 @@ export class RecoveryApiService {
       tap(plans => {
         this.engine.hydratePlans(disruptionId, plans);
         this.source.set('backend');
+        this.connectionError.set(null);
       }),
       catchError(error => this.isOffline(error)
         ? this.offline(this.engine.forDisruption(disruptionId))
@@ -53,7 +55,11 @@ export class RecoveryApiService {
   getDecisionLog(): Observable<RecoveryAuditEntry[]> {
     if (!this.http) return of(this.engine.auditEntries());
     return this.http.get<RecoveryAuditEntry[]>('/api/recovery-decisions').pipe(
-      tap(entries => this.engine.hydrateAudit(entries)),
+      tap(entries => {
+        this.engine.hydrateAudit(entries);
+        this.source.set('backend');
+        this.connectionError.set(null);
+      }),
       catchError(error => this.isOffline(error)
         ? this.offline(this.engine.auditEntries())
         : throwError(() => error))

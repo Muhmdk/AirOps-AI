@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Disruption,
   DisruptionSeverity,
@@ -22,6 +22,7 @@ export class DisruptionsPage {
   private readonly flightApi = inject(FlightApiService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly showCreate = signal(false);
   readonly status = signal('Active');
   readonly loading = signal(true);
@@ -33,6 +34,7 @@ export class DisruptionsPage {
     'Severe weather', 'Aircraft maintenance', 'Late incoming aircraft', 'Gate conflict',
     'Airport congestion', 'Crew timing issue', 'Runway closure', 'Air traffic restriction',
   ];
+  readonly airports = ['YYZ', 'YUL', 'YVR', 'YYC'];
   readonly flights = this.flightApi.state;
   readonly form = this.fb.nonNullable.group({
     type: ['Severe weather' as DisruptionType, Validators.required],
@@ -43,6 +45,23 @@ export class DisruptionsPage {
   });
 
   constructor() {
+    const query = this.route.snapshot.queryParamMap;
+    const requestedType = query.get('type') as DisruptionType | null;
+    const requestedAirport = query.get('airport');
+    const requestedFlight = query.get('flightId');
+    const hasScenario = !!(requestedType || requestedAirport || requestedFlight);
+    if (hasScenario) {
+      this.form.patchValue({
+        ...(requestedType && this.types.includes(requestedType) ? { type: requestedType } : {}),
+        ...(requestedAirport && this.airports.includes(requestedAirport)
+          ? { airport: requestedAirport }
+          : {}),
+        ...(requestedFlight && this.flights().some(flight => flight.id === requestedFlight)
+          ? { flightId: requestedFlight }
+          : {}),
+      });
+      this.showCreate.set(true);
+    }
     this.api.getDisruptions().subscribe({
       error: () => this.loading.set(false),
       complete: () => this.loading.set(false),

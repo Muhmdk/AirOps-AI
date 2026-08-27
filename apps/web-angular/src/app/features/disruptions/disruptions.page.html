@@ -122,10 +122,7 @@
           </select></label
         ><label
           >Airport<select formControlName="airport">
-            <option>YYZ</option>
-            <option>YUL</option>
-            <option>YVR</option>
-            <option>YYC</option>
+            @for (airport of airports; track airport) { <option [value]="airport">{{ airport }}</option> }
           </select></label
         >
       </div>

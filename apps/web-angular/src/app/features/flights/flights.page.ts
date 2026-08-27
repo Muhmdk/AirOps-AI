@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Flight, FlightStatus } from '../../core/models/flight.model';
 import { FlightsActions } from '../../store/flights/flights.actions';
@@ -19,6 +19,7 @@ type SortKey = 'risk' | 'departure' | 'flight';
 export class FlightsPage {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(FlightApiService);
   readonly flights = this.store.selectSignal(flightsFeature.selectAll);
@@ -26,7 +27,11 @@ export class FlightsPage {
   readonly error = this.store.selectSignal(flightsFeature.selectError);
   readonly dataSource = this.api.source;
   readonly sort = signal<SortKey>('risk');
-  readonly filters = this.fb.nonNullable.group({ search: '', status: 'All', risk: 'All' });
+  readonly filters = this.fb.nonNullable.group({
+    search: this.route.snapshot.queryParamMap.get('search') ?? '',
+    status: 'All',
+    risk: 'All',
+  });
   readonly filterValue = signal(this.filters.getRawValue());
   readonly visibleFlights = computed(() => {
     const { search, status, risk } = this.filterValue();
