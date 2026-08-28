@@ -192,7 +192,6 @@ AirOps-AI/
 │   │   ├── AirOps.Api/          # ASP.NET Core application
 │   │   └── AirOps.Api.Tests/    # Backend integration tests
 │   └── web-angular/             # Angular command center and Cypress tests
-├── docs/                        # Delivery and development documentation
 ├── scripts/                     # Verification, feature, and phase automation
 ├── compose.yaml                 # Local PostgreSQL service
 └── README.md
