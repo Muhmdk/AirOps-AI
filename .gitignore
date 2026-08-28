@@ -9,3 +9,7 @@
 
 # Operating systems
 .DS_Store
+
+# Local agent and planning documentation
+AGENTS.md
+docs/
