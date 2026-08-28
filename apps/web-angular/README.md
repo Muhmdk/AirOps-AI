@@ -4,13 +4,22 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Development server
 
-To start a local development server, run:
+Start the API from the repository root:
 
 ```bash
-ng serve
+docker compose up -d postgres
+dotnet run --project apps/api/AirOps.Api --urls http://localhost:5000
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Then start Angular in another terminal:
+
+```bash
+cd apps/web-angular
+corepack pnpm install
+corepack pnpm start
+```
+
+Open `http://localhost:4200/`. The development proxy sends REST and SignalR traffic to the API on port 5000. Flight, airport, aircraft, disruption, and recovery workflows, overview network metrics, and the event timeline use the backend. If the API is unavailable, the affected screens retain seeded demonstration data or browser simulation engines and report their offline state.
 
 ## Code scaffolding
 

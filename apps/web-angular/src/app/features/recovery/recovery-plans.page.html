@@ -8,9 +8,10 @@
       ><a class="active" routerLink="/recovery-plans">◇ <span>Recovery plans</span></a
       ><small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a
       ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
+      ><a routerLink="/passengers">♧ <span>Passengers</span></a
       ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
     </nav>
-    <div class="system"><i></i><b>Recommendation engine ready</b></div>
+    <div class="system"><i></i><b>{{api.source() === 'backend' ? 'Backend recommendation engine' : 'Browser recommendation engine'}}</b></div>
   </aside>
   <main>
     <header>
@@ -52,6 +53,9 @@
           </div>
           <span>{{ disruptions.active().length }} active</span>
         </div>
+        @if (error()) {
+          <p class="generation-error" role="alert">{{ error() }}</p>
+        }
         <div class="list">
           @for (d of disruptions.active(); track d.id) {
             <article tabindex="0" (click)="open(d)" (keydown.enter)="open(d)">
@@ -79,9 +83,9 @@
                 <p>{{ d.impact.recoveryMinutes }} min recovery</p>
               </div>
               @if (recovery.plans()[d.id]) {
-                <span class="generated">✓ {{ recovery.plans()[d.id].length }} plans ready</span>
+                <button class="generated" (click)="$event.stopPropagation(); open(d)">✓ {{ recovery.plans()[d.id].length }} plans ready</button>
               } @else {
-                <span class="new">Generate plans</span>
+                <button class="new" [disabled]="!!generating()" (click)="$event.stopPropagation(); open(d)">{{generating() === d.id ? 'Generating…' : 'Generate plans'}}</button>
               }
               <strong>›</strong>
             </article>

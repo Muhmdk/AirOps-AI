@@ -1,6 +1,14 @@
-import { Injectable } from '@angular/core';
-import { interval, map, merge, Observable, of, ReplaySubject, scan, shareReplay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, OnDestroy } from '@angular/core';
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  HubConnectionState,
+} from '@microsoft/signalr';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { OperationalEvent } from '../models/flight.model';
+
+export type EventStreamStatus = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
 const INITIAL_EVENTS: OperationalEvent[] = [
   { time: '09:08', type: 'risk', title: 'Weather risk raised', detail: 'Toronto Pearson · Severe thunderstorm cell', accent: 'amber', severity:'Critical', entityType:'airport', entityId:'YYZ', category:'Weather' },
@@ -12,20 +20,91 @@ const INITIAL_EVENTS: OperationalEvent[] = [
 ];
 
 @Injectable({ providedIn: 'root' })
-export class OperationsEventService {
-  private readonly published = new ReplaySubject<OperationalEvent[]>(20);
-  readonly events$: Observable<OperationalEvent[]> = merge(
-    of(INITIAL_EVENTS),
-    interval(15000).pipe(map(index => [{
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: index % 2 ? 'ok' : 'gate', title: index % 2 ? 'Turnaround completed · AC621' : 'Gate assignment updated · AC224',
-      detail: index % 2 ? 'Vancouver · Ready for boarding' : 'Toronto Pearson · Gate D18', accent: index % 2 ? 'green' : 'blue',
-      severity: 'Information', entityType: index % 2 ? 'flight' : 'airport', entityId: index % 2 ? 'AC621' : 'YYZ', category: index % 2 ? 'Flight' : 'Gate'
-    } satisfies OperationalEvent])),
-    this.published
-  ).pipe(
-    scan((events, next) => [...next, ...events].slice(0, 6), [] as OperationalEvent[]),
-    shareReplay({ bufferSize: 1, refCount: true })
-  );
-  publish(event: OperationalEvent) { this.published.next([event]); }
+export class OperationsEventService implements OnDestroy {
+  private readonly eventState = new BehaviorSubject<OperationalEvent[]>(INITIAL_EVENTS);
+  private readonly connectionState = new BehaviorSubject<EventStreamStatus>('offline');
+  private connection?: HubConnection;
+  private retryTimer?: ReturnType<typeof setTimeout>;
+  private destroyed = false;
+  readonly events$: Observable<OperationalEvent[]> = this.eventState.asObservable();
+  readonly connectionStatus$: Observable<EventStreamStatus> = this.connectionState.asObservable();
+
+  constructor(private readonly http?: HttpClient) {
+    if (!http || typeof window === 'undefined') return;
+    this.refreshHistory();
+    void this.startHub();
+  }
+
+  publish(event: OperationalEvent) {
+    this.prepend(event);
+  }
+
+  ngOnDestroy() {
+    this.destroyed = true;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    void this.connection?.stop();
+  }
+
+  private refreshHistory() {
+    this.http?.get<OperationalEvent[]>('/api/operations/events?limit=50').subscribe({
+      next: history => {
+        const historyKeys = new Set(history.map(event => this.eventKey(event)));
+        const localOnly = this.eventState.value.filter(
+          event => !historyKeys.has(this.eventKey(event))
+        );
+        this.eventState.next([...history, ...localOnly].slice(0, 50));
+      },
+      error: () => undefined,
+    });
+  }
+
+  private async startHub() {
+    if (this.destroyed) return;
+    if (!this.connection) {
+      this.connectionState.next('connecting');
+      this.connection = new HubConnectionBuilder()
+        .withUrl(new URL('/hubs/operations', window.location.origin).toString())
+        .withAutomaticReconnect([0, 2_000, 5_000, 10_000])
+        .build();
+      this.connection.on('operationalEvent', (event: OperationalEvent) => this.prepend(event));
+      this.connection.onreconnecting(() => this.connectionState.next('reconnecting'));
+      this.connection.onreconnected(() => {
+        this.connectionState.next('connected');
+        this.refreshHistory();
+      });
+      this.connection.onclose(() => {
+        this.connectionState.next('offline');
+        this.scheduleInitialRetry();
+      });
+    }
+
+    if (this.connection.state !== HubConnectionState.Disconnected) return;
+
+    try {
+      await this.connection.start();
+      this.connectionState.next('connected');
+    } catch {
+      this.connectionState.next('offline');
+      this.scheduleInitialRetry();
+    }
+  }
+
+  private scheduleInitialRetry() {
+    if (this.destroyed) return;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = undefined;
+      void this.startHub();
+    }, 5_000);
+  }
+
+  private prepend(event: OperationalEvent) {
+    const key = this.eventKey(event);
+    const current = this.eventState.value.filter(item => this.eventKey(item) !== key);
+    this.eventState.next([event, ...current].slice(0, 50));
+  }
+
+  private eventKey(event: OperationalEvent) {
+    return `${event.time}|${event.title}|${event.detail}`;
+  }
 }

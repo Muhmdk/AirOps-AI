@@ -1,12 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Flight, FlightStatus } from '../../core/models/flight.model';
 import { FlightsActions } from '../../store/flights/flights.actions';
 import { flightsFeature } from '../../store/flights/flights.reducer';
 import { FlightCountPipe } from './flight-count.pipe';
+import { FlightApiService } from '../../core/services/flight-api.service';
 
 type SortKey = 'risk' | 'departure' | 'flight';
 
@@ -18,12 +19,19 @@ type SortKey = 'risk' | 'departure' | 'flight';
 export class FlightsPage {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly api = inject(FlightApiService);
   readonly flights = this.store.selectSignal(flightsFeature.selectAll);
   readonly loading = this.store.selectSignal(flightsFeature.selectLoading);
   readonly error = this.store.selectSignal(flightsFeature.selectError);
+  readonly dataSource = this.api.source;
   readonly sort = signal<SortKey>('risk');
-  readonly filters = this.fb.nonNullable.group({ search: '', status: 'All', risk: 'All' });
+  readonly filters = this.fb.nonNullable.group({
+    search: this.route.snapshot.queryParamMap.get('search') ?? '',
+    status: 'All',
+    risk: 'All',
+  });
   readonly filterValue = signal(this.filters.getRawValue());
   readonly visibleFlights = computed(() => {
     const { search, status, risk } = this.filterValue();
@@ -34,7 +42,7 @@ export class FlightsPage {
       .filter(f => risk === 'All' || (risk === 'High' ? f.risk >= 65 : risk === 'Moderate' ? f.risk >= 35 && f.risk < 65 : f.risk < 35))
       .sort((a, b) => this.sort() === 'risk' ? b.risk - a.risk : this.sort() === 'departure' ? a.departure.localeCompare(b.departure) : a.id.localeCompare(b.id));
   });
-  readonly statuses: Array<'All' | FlightStatus> = ['All', 'At risk', 'Delayed', 'Boarding', 'On time'];
+  readonly statuses: Array<'All' | FlightStatus> = ['All', 'At risk', 'Delayed', 'Boarding', 'On time', 'Cancelled'];
 
   constructor() {
     this.store.dispatch(FlightsActions.load());

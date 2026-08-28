@@ -1,4 +1,4 @@
-export type FlightStatus = 'On time' | 'Delayed' | 'Boarding' | 'At risk';
+export type FlightStatus = 'On time' | 'Delayed' | 'Boarding' | 'At risk' | 'Cancelled';
 
 export interface Flight {
   id: string;
@@ -18,13 +18,15 @@ export interface Flight {
 }
 
 export interface OperationalEvent {
+  id?: string;
+  timestamp?: string;
   time: string;
   type: 'risk' | 'delay' | 'gate' | 'ok';
   title: string;
   detail: string;
   accent: 'amber' | 'red' | 'blue' | 'green';
   severity?: 'Critical' | 'Warning' | 'Information';
-  entityType?: 'flight' | 'airport' | 'aircraft';
+  entityType?: 'flight' | 'airport' | 'aircraft' | 'passenger';
   entityId?: string;
-  category?: 'Weather' | 'Flight' | 'Gate' | 'Aircraft' | 'Passenger';
+  category?: 'Weather' | 'Flight' | 'Gate' | 'Aircraft' | 'Passenger' | 'Simulation';
 }

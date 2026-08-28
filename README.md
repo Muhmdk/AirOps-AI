@@ -1,123 +1,213 @@
 # AirOps AI
 
-AirOps AI is an airline operations control dashboard for detecting disruptions, understanding network-wide impact, and evaluating recovery actions.
+**Airline Disruption Prediction and Recovery Platform**
 
-## Current milestone
+AirOps AI is a full-stack airline operations command center. It gives controllers one place to monitor the network, investigate disruptions, compare recovery plans, protect passenger journeys, and record the decisions they make.
 
-The browser-based core MVP (Phases 2–4) is complete in `apps/web-angular`. The application now supports the complete controller workflow: detect a disruption, calculate network impact, compare recovery options, approve an action, and inspect the resulting network outcome.
+> The project currently uses deterministic risk and recovery models. Predictive machine learning is part of the roadmap and is not presented as a finished feature.
 
-Phase 2 — Angular Operations Dashboard includes:
+## 💡 Inspiration
 
-- Network health and operational KPI cards
-- Airport risk map and live operational event feed
-- Searchable high-risk flight table
-- Interactive flight detail panel with risk factors and passenger impact
-- Responsive desktop and mobile layouts
-- Seeded Canadian airline operations data
-- NgRx entity state, actions, reducer, selectors, and API-loading effect
-- RxJS live operational event stream
-- Lazy-loaded routes, authentication guard, and HTTP correlation interceptor
-- Functional Flights workspace with reactive search, status/risk filters, sorting, and operational summaries
-- Dedicated flight-detail routes with disruption risk, rotation, passenger impact, and active alerts
-- Searchable Airports workspace with risk filtering, network map, weather, capacity, and traffic metrics
-- Airport detail routes with affected flights and operational alerts
-- Aircraft Management workspace with fleet status, type filters, utilization, health, and maintenance readiness
-- Aircraft detail routes with specifications, assigned flights, and daily rotation timelines
-- Live Operational Event Timeline with search, severity/category filters, pause/resume controls, and entity deep links
-- Reactive controller login, protected routes, session persistence, logout, and return-URL handling
-- Global error handling and HTTP correlation IDs
-- Cypress end-to-end coverage for the primary controller journey
+A single delay rarely stays attached to one flight. Bad weather at Toronto can affect an aircraft's next rotation, create a gate conflict in Vancouver, push a crew toward its duty limit, and leave connecting passengers stranded.
 
-## Demo login
+The hard part is not seeing that a flight is late. It is understanding what that delay will touch next and choosing a recovery action before the problem spreads. AirOps AI was built around that problem: give an operations controller a clear view of the network and make every recovery decision traceable.
+
+## 🔍 What it does
+
+AirOps AI supports a complete simulated disruption-to-recovery workflow:
+
+- Monitors network health, flights, airports, aircraft, passengers, and live operational events.
+- Searches and filters flights by status, route, aircraft, and disruption risk.
+- Creates operational disruptions such as severe weather, maintenance issues, crew constraints, congestion, and gate conflicts.
+- Calculates affected flights, propagated delays, missed connections, crew exposure, gate conflicts, passenger impact, and estimated costs.
+- Generates several recovery strategies and scores them by delay, passenger impact, cost, and operational risk.
+- Lets controllers compare, approve, or reject plans with notes and supervisor authorization where required.
+- Applies approved recovery actions back to the shared network state and keeps an immutable audit history.
+- Identifies at-risk passenger journeys, displays service requirements and connection shortfalls, and persists rebooking decisions.
+- Publishes committed operational changes to a live event timeline through SignalR.
+- Includes a Scenario Lab for repeatable disruption simulations, replay, stress testing, and clean resets.
+
+The application also has deliberate offline fallbacks, so the main workspaces remain usable when the API is unavailable. The interface clearly shows whether it is using PostgreSQL-backed data or demonstration data.
+
+## ⚙️ How we built it
+
+### Frontend
+
+**Angular 22 and TypeScript:** The main web application, route-level workspaces, forms, filters, and controller workflows.
+
+**SCSS:** Responsive dashboard layouts and reusable visual states for risk, severity, health, and recovery status.
+
+**NgRx and RxJS:** Shared flight state, reactive data loading, live event handling, and browser fallback services.
+
+**SignalR client:** Receives operational events after the backend transaction commits.
+
+**Vitest and Cypress:** Unit, service-level, and browser tests for the real controller journey.
+
+### Backend
+
+**ASP.NET Core 9:** A modular-monolith API organized around flights, airports, aircraft, disruptions, recovery, passengers, simulation, and operations events.
+
+**Entity Framework Core and Npgsql:** Relational persistence, migrations, repository implementations, and transactional state changes.
+
+**PostgreSQL 17:** Stores the operational network, disruptions, recovery plans, passenger journeys, audit records, and event history.
+
+**SignalR:** Broadcasts live events only after their related database work succeeds.
+
+**xUnit:** Integration tests run against an in-process API host with isolated test data.
+
+### Decision engines
+
+**Disruption impact engine:** Deterministic rules calculate delay propagation, aircraft rotation effects, passenger connections, crew limits, gate occupancy, and cost exposure.
+
+**Recovery scoring engine:** Produces and ranks operational choices such as maintaining the rotation, swapping aircraft, holding a connection, changing a gate, cancelling a downstream flight, or rebooking passengers.
+
+### Local infrastructure
+
+**Docker Compose:** Starts PostgreSQL with a persistent local volume.
+
+**GitHub pull requests and delivery scripts:** The repository uses one branch and pull request per phase, with a separate commit for each testable feature.
+
+## 🏗️ Architecture
+
+```text
+Angular command center
+        │
+        ├── REST API requests
+        └── SignalR operational events
+                    │
+ASP.NET Core modular monolith
+        ├── Flight, airport, and aircraft operations
+        ├── Disruption impact engine
+        ├── Recovery planning and approval
+        ├── Passenger journey recovery
+        ├── Simulation clock
+        └── Operational audit and event stream
+                    │
+              PostgreSQL 17
+```
+
+## 🪦 Challenges we ran into
+
+- Recomputing a shared network when several disruptions overlap. Resolving one event must remove only its effects while preserving every disruption that is still active.
+- Keeping recovery approval transactional. A plan, network mutation, audit record, and live event cannot disagree with one another if a database operation fails.
+- Supporting browser fallbacks without making offline demonstration data look like live backend data.
+- Testing against persistent state. IDs and statuses change as controllers use the app, so the browser suite cannot assume that every run starts from a pristine database.
+- Turning operational data into screens that are dense enough for a controller but still readable without airline-specific training.
+
+## 😁 Accomplishments that we're proud of
+
+- Built the full controller path from disruption creation to impact calculation, recovery comparison, approval, network mutation, and audit history.
+- Connected every primary workspace to the ASP.NET Core API and PostgreSQL while preserving an offline demo mode.
+- Added passenger recovery as a real workflow instead of a static metric: bookings can be searched, inspected, rebooked, and followed through the event timeline.
+- Made approved recoveries restart-safe by rebuilding operational state from persisted disruptions and decisions.
+- Covered the application with 36 backend integration tests, 37 Angular tests, and 14 browser journeys.
+- Tested every major call to action in the UI so buttons lead to a workspace, perform an operation, or provide visible feedback.
+
+## 📖 What we learned
+
+Airline recovery is a state-management problem as much as it is an optimization problem. A decision that looks good for one flight can be bad for the aircraft rotation or for dozens of connecting passengers.
+
+We also learned to treat the database transaction as the source of truth. Live updates are useful only when they describe work that has actually committed. That rule shaped the API, SignalR event flow, recovery audit, and the way the frontend refreshes state after a controller decision.
+
+On the testing side, realistic workflows exposed problems that isolated component tests did not: stale identifiers, asynchronous filter options, database timestamp rules, and actions that appeared clickable but had no useful result.
+
+## 🚀 Run it locally
+
+### Prerequisites
+
+- Node.js 24 LTS
+- .NET 9 SDK
+- Docker Desktop
+- Corepack, included with supported Node.js releases
+
+### 1. Start PostgreSQL and the API
+
+From the repository root:
+
+```bash
+docker compose up -d postgres
+dotnet run --project apps/api/AirOps.Api --urls http://localhost:5000
+```
+
+The API applies pending Entity Framework migrations and inserts the demonstration dataset when the relevant tables are empty.
+
+### 2. Start the Angular application
+
+In a second terminal:
+
+```bash
+cd apps/web-angular
+corepack pnpm install
+corepack pnpm start
+```
+
+Open [http://localhost:4200](http://localhost:4200).
+
+### Demo login
 
 ```text
 Controller ID: maya.chen
 Password: operations
 ```
 
-## Run locally
+## 🧪 Try the main workflow
 
-Use Node.js 24 LTS or a version supported by Angular 22.
+1. Open **Disruptions** and select **Trigger disruption**.
+2. Choose a type, severity, airport, flight, and duration.
+3. Select **Trigger and calculate impact**.
+4. Review the affected rotations, passenger connections, crew, gates, and cost estimates.
+5. Generate recovery plans, compare the choices, and approve or reject one with controller notes.
+6. Open **Passengers** to inspect at-risk bookings and rebook a journey.
+7. Open **Event timeline** to see the saved disruption, recovery, and passenger events.
+
+## ✅ Verification
+
+Run the repository verification script from the project root:
+
+```bash
+./scripts/verify.sh
+```
+
+With the API and web application running, execute the browser suite:
 
 ```bash
 cd apps/web-angular
-npm install
-npm start
+corepack pnpm e2e
 ```
 
-Then open `http://localhost:4200`.
+Current automated coverage:
 
-## Verify
+- 36 ASP.NET Core integration tests
+- 37 Angular unit and service-level tests
+- 14 Cypress controller journeys
+- Entity Framework migration alignment check
+- Angular production build
 
-```bash
-cd apps/web-angular
-npm run build
-npm test -- --watch=false
-npm run e2e
+## 📁 Project structure
+
+```text
+AirOps-AI/
+├── apps/
+│   ├── api/
+│   │   ├── AirOps.Api/          # ASP.NET Core application
+│   │   └── AirOps.Api.Tests/    # Backend integration tests
+│   └── web-angular/             # Angular command center and Cypress tests
+├── docs/                        # Delivery and development documentation
+├── scripts/                     # Verification, feature, and phase automation
+├── compose.yaml                 # Local PostgreSQL service
+└── README.md
 ```
 
-The end-to-end suite expects the app to be running at `http://localhost:4200`.
+## 🤔 What's next for AirOps AI
 
-## Delivery workflow
+**Predictive risk models:** Train and evaluate delay and disruption models using historical flight, weather, airport, and aircraft-rotation data. Predictions will include confidence and model-version metadata rather than replacing the current deterministic rules silently.
 
-Development uses one branch and one pull request per phase. Each independently testable feature is committed separately with a Conventional Commit message.
+**Live operational data:** Add adapters for airline schedules, weather feeds, airport constraints, aircraft telemetry, crew systems, and passenger reservations.
 
-```bash
-scripts/complete-feature.sh "feat(scope): describe the feature" -- path/to/feature
-scripts/complete-phase.sh "Phase N: short description"
-```
+**Optimization at network scale:** Move beyond ranked heuristics toward constrained optimization across aircraft, crews, gates, passenger connections, and recovery cost.
 
-The phase command runs full verification, pushes the branch, and creates or locates the GitHub pull request. See `docs/DELIVERY_WORKFLOW.md` for setup and usage.
+**Production identity and permissions:** Replace the demonstration login with secure authentication, controller roles, supervisor permissions, and organization-level access controls.
 
-Commits and pull requests use the repository owner's configured Git and GitHub identities. The delivery scripts reject Codex, OpenAI, bot, co-author, or generated-by attribution.
+**Cloud deployment and observability:** Package the services for Azure, add structured monitoring and tracing, and measure recovery outcomes over time.
 
-## Phase 3 — Complete
-
-The disruption and network-impact engine is implemented:
-
-- Typed disruption scenarios and severity levels
-- Rule-based delay calculation
-- Aircraft-rotation delay propagation
-- Passenger, missed-connection, crew, gate, hotel, voucher, compensation, cost, and recovery-time estimates
-- Disruption creation and resolution workflow
-- Disruption list and detailed network-impact visualization
-- Passenger itinerary connection checks against minimum connection times
-- Gate occupancy overlap detection
-- Crew duty-time threshold and legal-limit monitoring
-- Disruption creation and resolution events published into the live operational timeline
-- Shared network-state mutation for flight delay/risk, airport health/capacity, and aircraft availability
-- Baseline recomputation when disruptions are resolved
-- Browser persistence for disruption and audit state across refreshes
-- Controller audit history with field-level before-and-after values
-- Scenario Lab with four repeatable disruption presets
-- Before-and-after network snapshots, clean reset, and deterministic replay
-- Simultaneous-disruption overlap detection for shared airports and aircraft rotations
-- Compound delay, passenger, and cost impact plus a three-event network stress test
-
-## Phase 4 — Complete
-
-- Deterministic recovery candidate generation
-- Six action strategies: maintain rotation, swap aircraft, hold a connection, change gate, cancel a downstream flight, and rebook passengers
-- Weighted scoring across delay, passenger connections, cost, and operational risk
-- Recommended-plan selection and side-by-side comparison workspace
-- Explicit controller approval and rejection decisions with notes
-- Supervisor thresholds, alternative rejection, and execution against network state
-- Gate reassignment reflected in flight and airport operations
-- Before-and-after delay, connection, and cost outcomes after execution
-- Persistent recovery outcomes and immutable decision audit records
-- Recovery decisions published into the live operational event stream
-- Unit and Cypress coverage for the complete disruption-to-recovery journey
-
-The Phase 4 completion condition is satisfied: a controller can select a disruption, compare at least three plans, approve or reject an option, and see the simulated network state change.
-
-## Current verification
-
-- 16 unit and service-level tests
-- 5 Cypress end-to-end controller journeys
-- Successful Angular production build
-
-The current MVP remains a frontend simulation backed by typed in-memory services and browser persistence. The next platform milestone is the modular backend, database, simulation API, and event broker.
-
-## Planned architecture
-
-The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. The current UI uses an in-memory typed data source so it can later be replaced by NgRx effects and backend APIs without changing the interaction model.
+**Larger simulation datasets:** Expand beyond the current Canadian demonstration network and test multi-hub disruption days with hundreds of connected flights.

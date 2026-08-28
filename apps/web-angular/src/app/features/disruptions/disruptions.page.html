@@ -8,9 +8,10 @@
       ><a routerLink="/recovery-plans">◇ <span>Recovery plans</span></a
       ><small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a
       ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
+      ><a routerLink="/passengers">♧ <span>Passengers</span></a
       ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
     </nav>
-    <div class="system"><i></i><b>Impact engine online</b></div>
+    <div class="system"><i></i><b>{{api.source() === 'backend' ? 'Backend impact engine' : 'Browser impact engine'}}</b></div>
   </aside>
   <main>
     <header>
@@ -52,7 +53,7 @@
               <button [class.active]="status() === s" (click)="status.set(s)">{{ s }}</button>
             }
           </div>
-          <span>{{ visible().length }} disruption records</span>
+          <span>{{ visible().length }} disruption records · {{api.source() === 'backend' ? 'AirOps API' : 'offline data'}}</span>
         </div>
         <div class="list">
           @for (d of visible(); track d.id) {
@@ -122,16 +123,13 @@
           </select></label
         ><label
           >Airport<select formControlName="airport">
-            <option>YYZ</option>
-            <option>YUL</option>
-            <option>YVR</option>
-            <option>YYC</option>
+            @for (airport of airports; track airport) { <option [value]="airport">{{ airport }}</option> }
           </select></label
         >
       </div>
       <label
         >Primary flight<select formControlName="flightId">
-          @for (f of flights; track f.id) {
+          @for (f of flights(); track f.id) {
             <option [value]="f.id">{{ f.id }} · {{ f.route }}</option>
           }
         </select></label
@@ -147,7 +145,8 @@
           gate conflicts, recovery time, and estimated cost.
         </p>
       </div>
-      <button type="submit" [disabled]="form.invalid">Trigger and calculate impact →</button>
+      @if(error()){<p>{{error()}}</p>}
+      <button type="submit" [disabled]="form.invalid || submitting()">{{submitting() ? 'Calculating impact…' : 'Trigger and calculate impact →'}}</button>
     </form>
   </aside>
 }

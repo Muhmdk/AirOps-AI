@@ -1,7 +1,7 @@
 <main>
   <header>
     <a routerLink="/recovery-plans">← Recovery plans</a
-    ><span><i></i> Recommendation engine online</span>
+    ><span><i></i> {{api.source() === 'backend' ? 'Backend recommendation engine' : 'Browser recommendation engine'}}</span>
   </header>
   @if (disruption(); as d) {
     <section class="hero">
@@ -201,9 +201,9 @@
     <label class="notes">Decision notes<textarea data-cy="decision-notes" [ngModel]="notes()" (ngModelChange)="notes.set($event)" [placeholder]="decisionMode() === 'approve' ? 'Reason for selecting this recovery action…' : 'Reason this recovery action is not suitable…'"></textarea></label>
     @if(approvalError()){<div class="approval-error">! {{approvalError()}}</div>}
     @if(decisionMode() === 'approve'){
-      <button class="approve" data-cy="confirm-approval" (click)="approve()">Approve and execute plan →</button>
+      <button class="approve" data-cy="confirm-approval" [disabled]="submitting()" (click)="approve()">{{submitting() ? 'Executing…' : 'Approve and execute plan →'}}</button>
     } @else {
-      <button class="approve reject-confirm" data-cy="confirm-rejection" (click)="reject()">Reject plan →</button>
+      <button class="approve reject-confirm" data-cy="confirm-rejection" [disabled]="submitting()" (click)="reject()">{{submitting() ? 'Recording…' : 'Reject plan →'}}</button>
     }
     <p class="legal">Recorded as {{supervisorOverride()?'Alex Morgan · Operations Supervisor':'Maya Chen · Operations Controller'}}</p>
   </aside>

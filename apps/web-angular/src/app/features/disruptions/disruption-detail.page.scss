@@ -132,6 +132,16 @@ header i {
   flex-direction: column;
   gap: 13px;
 }
+.columns > aside .action-error {
+  margin: -5px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #f1b6ba;
+  border-radius: 6px;
+  background: #fff1f2;
+  color: #a52f38;
+  font-size: 8px;
+  line-height: 1.5;
+}
 .head {
   height: 58px;
   border-bottom: 1px solid #e8edf1;

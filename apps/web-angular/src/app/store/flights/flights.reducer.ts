@@ -14,6 +14,11 @@ export const flightsFeature = createFeature({
     on(FlightsActions.load, state => ({ ...state, loading: true, error: null })),
     on(FlightsActions.loadSuccess, (state, { flights }) => adapter.setAll(flights, { ...state, loading: false })),
     on(FlightsActions.loadFailure, (state, { error }) => ({ ...state, loading: false, error })),
+    on(FlightsActions.loadFlight, state => ({ ...state, loading: true, error: null })),
+    on(FlightsActions.loadFlightSuccess, (state, { flight }) =>
+      adapter.upsertOne(flight, { ...state, loading: false })),
+    on(FlightsActions.loadFlightFailure, (state, { error }) =>
+      ({ ...state, loading: false, error })),
     on(FlightsActions.select, (state, { id }) => ({ ...state, selectedId: id })),
     on(FlightsActions.setSearch, (state, { search }) => ({ ...state, search })),
   ),

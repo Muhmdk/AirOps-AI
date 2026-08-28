@@ -228,10 +228,27 @@ header > div:last-child {
 }
 .generated,
 .new {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 7px;
   padding: 6px 8px;
   border-radius: 12px;
   text-align: center;
+}
+.generated:disabled,
+.new:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.generation-error {
+  margin: 12px 15px 0;
+  padding: 10px 12px;
+  border: 1px solid #efc0c4;
+  border-radius: 7px;
+  background: #fff0f1;
+  color: #a9343c;
+  font-size: 8px;
 }
 .generated {
   background: #e2f5ed;

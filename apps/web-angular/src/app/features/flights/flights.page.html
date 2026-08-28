@@ -1,12 +1,179 @@
 <div class="shell">
-  <aside><a class="brand" routerLink="/overview"><span>▰</span><div><b>AirOps</b><small>COMMAND CENTER</small></div></a><nav><small>NETWORK</small><a routerLink="/overview" routerLinkActive="active">⌁ <span>Overview</span></a><a routerLink="/flights" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">✈ <span>Flights</span></a><a routerLink="/disruptions" routerLinkActive="active">△ <span>Disruptions</span></a><a routerLink="/recovery-plans" routerLinkActive="active">◇ <span>Recovery plans</span></a><small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a><a routerLink="/aircraft">⌁ <span>Aircraft</span></a><a routerLink="/event-timeline">≡ <span>Event timeline</span></a></nav><div class="system"><i></i><div><b>All systems operational</b><small>Live simulation active</small></div></div></aside>
-  <main><header><div><p>NETWORK OPERATIONS / FLIGHTS</p><h1>Flights</h1><span>Monitor today’s operating schedule and disruption risk.</span></div><div class="clock"><i></i> Live · 09:12 EDT</div></header>
+  <aside>
+    <a class="brand" routerLink="/overview"
+      ><span>▰</span>
+      <div><b>AirOps</b><small>COMMAND CENTER</small></div></a
+    >
+    <nav>
+      <small>NETWORK</small
+      ><a routerLink="/overview" routerLinkActive="active">⌁ <span>Overview</span></a
+      ><a
+        routerLink="/flights"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >✈ <span>Flights</span></a
+      ><a routerLink="/disruptions" routerLinkActive="active">△ <span>Disruptions</span></a
+      ><a routerLink="/recovery-plans" routerLinkActive="active">◇ <span>Recovery plans</span></a
+      ><small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a
+      ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
+      ><a routerLink="/passengers">♧ <span>Passengers</span></a
+      ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
+    </nav>
+    <div class="system">
+      <i></i>
+      <div><b>All systems operational</b><small>Live simulation active</small></div>
+    </div>
+  </aside>
+  <main>
+    <header>
+      <div>
+        <p>NETWORK OPERATIONS / FLIGHTS</p>
+        <h1>Flights</h1>
+        <span>Monitor today’s operating schedule and disruption risk.</span>
+      </div>
+      <div class="clock"><i></i> Live · 09:12 EDT</div>
+    </header>
     <section class="content">
-      <div class="summary"><article><small>TOTAL FLIGHTS</small><b>{{flights().length}}</b><span>in current simulation</span></article><article><small>REQUIRING ATTENTION</small><b class="red">{{(flights() | flightCount:'attention')}}</b><span>delayed or at risk</span></article><article><small>PASSENGERS</small><b>{{(flights() | flightCount:'passengers') | number}}</b><span>across listed flights</span></article><article><small>AVG. RISK</small><b class="amber">{{(flights() | flightCount:'risk')}}%</b><span>current disruption risk</span></article></div>
+      <div class="summary">
+        <article>
+          <small>TOTAL FLIGHTS</small><b>{{ flights().length }}</b
+          ><span>in current simulation</span>
+        </article>
+        <article>
+          <small>REQUIRING ATTENTION</small
+          ><b class="red">{{ flights() | flightCount: 'attention' }}</b
+          ><span>delayed or at risk</span>
+        </article>
+        <article>
+          <small>PASSENGERS</small><b>{{ flights() | flightCount: 'passengers' | number }}</b
+          ><span>across listed flights</span>
+        </article>
+        <article>
+          <small>AVG. RISK</small><b class="amber">{{ flights() | flightCount: 'risk' }}%</b
+          ><span>current disruption risk</span>
+        </article>
+      </div>
       <article class="panel">
-        <div class="filters" [formGroup]="filters"><label class="search">⌕<input formControlName="search" placeholder="Search flight, city, aircraft…"></label><div class="status-tabs">@for(status of statuses; track status){<button [class.active]="filters.controls.status.value === status" (click)="setStatus(status)">{{status}}</button>}</div><label>Risk <select formControlName="risk"><option>All</option><option>High</option><option>Moderate</option><option>Low</option></select></label><label>Sort <select [value]="sort()" (change)="sort.set($any($event.target).value)"><option value="risk">Highest risk</option><option value="departure">Departure</option><option value="flight">Flight number</option></select></label></div>
-        @if(loading()){<div class="state"><div class="spinner"></div><h2>Loading flight operations</h2></div>}@else if(error()){<div class="state"><span>!</span><h2>Flight data unavailable</h2><p>{{error()}}</p><button (click)="retry()">Try again</button></div>}@else if(!visibleFlights().length){<div class="state"><span>⌕</span><h2>No flights match these filters</h2><p>Try a different flight number, status, or risk level.</p><button (click)="clearFilters()">Clear filters</button></div>}@else{
-        <div class="result-head"><span>{{visibleFlights().length}} flights</span><span>Last synchronized 12 seconds ago</span></div><div class="table-wrap"><table><thead><tr><th>FLIGHT</th><th>ROUTE</th><th>SCHEDULE</th><th>AIRCRAFT / GATE</th><th>STATUS</th><th>RISK</th><th>PASSENGERS</th><th></th></tr></thead><tbody>@for(flight of visibleFlights();track flight.id){<tr tabindex="0" (click)="openFlight(flight)" (keydown.enter)="openFlight(flight)"><td><b>{{flight.id}}</b><small>Air Canada</small></td><td><b>{{flight.route}}</b><small>{{flight.origin}} → {{flight.destination}}</small></td><td><b>{{flight.departure}} → {{flight.arrival}}</b><small [class.late]="flight.delay">{{flight.delay ? '+'+flight.delay+' min predicted' : 'On schedule'}}</small></td><td><b>{{flight.aircraft.split(' · ')[0]}}</b><small>{{flight.aircraft.split(' · ')[1]}} · Gate {{flight.gate}}</small></td><td><span class="status {{flight.status.toLowerCase().replace(' ','-')}}"><i></i>{{flight.status}}</span></td><td><div class="risk"><span><i [style.width.%]="flight.risk"></i></span><b>{{flight.risk}}%</b></div><small>{{flight.riskLabel}}</small></td><td><b>{{flight.passengers}}</b><small>{{flight.connections}} connections</small></td><td>›</td></tr>}</tbody></table></div>}
+        <div class="filters" [formGroup]="filters">
+          <label class="search"
+            >⌕<input formControlName="search" placeholder="Search flight, city, aircraft…"
+          /></label>
+          <div class="status-tabs">
+            @for (status of statuses; track status) {
+              <button
+                [class.active]="filters.controls.status.value === status"
+                (click)="setStatus(status)"
+              >
+                {{ status }}
+              </button>
+            }
+          </div>
+          <label
+            >Risk
+            <select formControlName="risk">
+              <option>All</option>
+              <option>High</option>
+              <option>Moderate</option>
+              <option>Low</option>
+            </select></label
+          ><label
+            >Sort
+            <select [value]="sort()" (change)="sort.set($any($event.target).value)">
+              <option value="risk">Highest risk</option>
+              <option value="departure">Departure</option>
+              <option value="flight">Flight number</option>
+            </select></label
+          >
+        </div>
+        @if (loading()) {
+          <div class="state">
+            <div class="spinner"></div>
+            <h2>Loading flight operations</h2>
+          </div>
+        } @else if (error()) {
+          <div class="state">
+            <span>!</span>
+            <h2>Flight data unavailable</h2>
+            <p>{{ error() }}</p>
+            <button (click)="retry()">Try again</button>
+          </div>
+        } @else if (!visibleFlights().length) {
+          <div class="state">
+            <span>⌕</span>
+            <h2>No flights match these filters</h2>
+            <p>Try a different flight number, status, or risk level.</p>
+            <button (click)="clearFilters()">Clear filters</button>
+          </div>
+        } @else {
+          <div class="result-head">
+            <span>{{ visibleFlights().length }} flights</span
+            ><span>{{
+              dataSource() === 'backend'
+                ? 'Synchronized with AirOps API'
+                : 'Offline demonstration data'
+            }}</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>FLIGHT</th>
+                  <th>ROUTE</th>
+                  <th>SCHEDULE</th>
+                  <th>AIRCRAFT / GATE</th>
+                  <th>STATUS</th>
+                  <th>RISK</th>
+                  <th>PASSENGERS</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (flight of visibleFlights(); track flight.id) {
+                  <tr
+                    tabindex="0"
+                    (click)="openFlight(flight)"
+                    (keydown.enter)="openFlight(flight)"
+                  >
+                    <td>
+                      <b>{{ flight.id }}</b
+                      ><small>Air Canada</small>
+                    </td>
+                    <td>
+                      <b>{{ flight.route }}</b
+                      ><small>{{ flight.origin }} → {{ flight.destination }}</small>
+                    </td>
+                    <td>
+                      <b>{{ flight.departure }} → {{ flight.arrival }}</b
+                      ><small [class.late]="flight.delay">{{
+                        flight.delay ? '+' + flight.delay + ' min predicted' : 'On schedule'
+                      }}</small>
+                    </td>
+                    <td>
+                      <b>{{ flight.aircraft.split(' · ')[0] }}</b
+                      ><small>{{ flight.aircraft.split(' · ')[1] }} · Gate {{ flight.gate }}</small>
+                    </td>
+                    <td>
+                      <span class="status {{ flight.status.toLowerCase().replace(' ', '-') }}"
+                        ><i></i>{{ flight.status }}</span
+                      >
+                    </td>
+                    <td>
+                      <div class="risk">
+                        <span><i [style.width.%]="flight.risk"></i></span><b>{{ flight.risk }}%</b>
+                      </div>
+                      <small>{{ flight.riskLabel }}</small>
+                    </td>
+                    <td>
+                      <b>{{ flight.passengers }}</b
+                      ><small>{{ flight.connections }} connections</small>
+                    </td>
+                    <td>›</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </article>
     </section>
   </main>
