@@ -2,9 +2,9 @@ describe('operations controller journey',()=>{
   const signIn=()=>{cy.visit('/login');cy.get('input[formcontrolname="controllerId"]').clear().type('maya.chen');cy.get('input[formcontrolname="password"]').clear().type('operations');cy.contains('button','Sign in').click();cy.url().should('include','/overview')};
   it('protects operational routes and authenticates the controller',()=>{cy.visit('/flights');cy.url().should('include','/login');cy.contains('Welcome back');cy.get('input[formcontrolname="controllerId"]').clear().type('maya.chen');cy.get('input[formcontrolname="password"]').clear().type('operations');cy.contains('button','Sign in').click();cy.url().should('include','/flights');cy.contains('h1','Flights')});
   it('signs the controller out and restores route protection',()=>{signIn();cy.get('button[aria-label="Sign out"]').click();cy.url().should('include','/login');cy.visit('/aircraft');cy.url().should('include','/login')});
-  it('searches flights and follows aircraft, disruption, and recovery actions',()=>{signIn();cy.visit('/flights');cy.get('input[placeholder*="Search flight"]').type('AC103');cy.get('tbody tr').should('have.length',1).click();cy.url().should('include','/flights/AC103');cy.contains('Disruption risk');cy.contains('button','View aircraft').click();cy.url().should('include','/aircraft/C-FVLX');cy.visit('/flights/AC103');cy.contains('button','Open disruption record').click();cy.url().should('include','/disruptions/DSP-001');cy.visit('/flights/AC103');cy.contains('button','Evaluate recovery options').click();cy.url().should('include','/recovery-plans/DSP-001');cy.contains('Recovery options for AC103')});
+  it('searches flights and follows aircraft, disruption, and recovery actions',()=>{signIn();cy.visit('/flights');cy.get('input[placeholder*="Search flight"]').type('AC103');cy.get('tbody tr').should('have.length',1).click();cy.url().should('include','/flights/AC103');cy.contains('Disruption risk');cy.contains('button','View aircraft').click();cy.url().should('include','/aircraft/C-FVLX');cy.visit('/flights/AC103');cy.contains('button','Open disruption record').click();cy.url().should('match',/\/disruptions\/DSP-\d+$/);cy.visit('/flights/AC103');cy.contains('button','Evaluate recovery options').click();cy.url().should('match',/\/recovery-plans\/DSP-\d+$/);cy.contains('Recovery options for AC103')});
   it('opens airport and aircraft operational details',()=>{signIn();cy.visit('/airports');cy.contains('article','Toronto').click();cy.url().should('include','/airports/YYZ');cy.contains('Weather conditions');cy.visit('/aircraft');cy.contains('article','C-FVLX').click();cy.url().should('include','/aircraft/C-FVLX');cy.contains('Today’s aircraft rotation')});
-  it('filters events and follows an affected entity',()=>{signIn();cy.visit('/event-timeline');cy.get('select').first().select('Critical');cy.contains('Weather risk raised').click();cy.url().should('include','/airports/YYZ')});
+  it('filters events and follows an affected entity',()=>{signIn();cy.request('POST','/api/disruptions',{type:'Severe weather',severity:'Critical',airport:'YYZ',flightId:'AC418',durationMinutes:25});cy.visit('/event-timeline');cy.get('select').first().select('Critical');cy.get('input[placeholder*="Search events"]').type('Severe weather · AC418');cy.contains('Severe weather · AC418').click();cy.url().should('include','/flights/AC418')});
   it('filters and clears flight, airport, aircraft, and disruption collections',()=>{
     signIn();
     cy.visit('/flights');
@@ -138,5 +138,60 @@ describe('operations controller journey',()=>{
     cy.get('[data-cy="recovery-outcome"]').should('contain','Measured network outcome').and('contain','saved');
     cy.visit('/recovery-plans');
     cy.contains('.decision-log','Recovery decision log').should('contain','Approved').and('contain','Rejected');
+  });
+  it('finds an affected booking and completes passenger recovery',()=>{
+    signIn();
+    cy.visit('/passengers');
+    cy.contains('Passenger data synchronized').should('be.visible');
+    cy.get('input[aria-label="Search passenger journeys"]').type('Aisha');
+    cy.get('tbody tr').should('have.length',1).and('contain','7Q4K2M');
+    cy.contains('button','Clear filters').should('not.exist');
+    cy.get('input[aria-label="Search passenger journeys"]').clear().type('NO-SUCH-BOOKING');
+    cy.contains('No passenger journeys match').should('be.visible');
+    cy.contains('button','Clear filters').click();
+    cy.get('tbody tr').should('have.length.greaterThan',0);
+
+    cy.request('/api/passengers').then(response=>{
+      const journeys=response.body as Array<{
+        id:string;
+        status:string;
+        alternativeFlights:string[];
+        bookingReference:string;
+      }>;
+      const candidate=journeys.find(item=>item.status!=='Rebooked');
+      if(!candidate){
+        const protectedJourney=journeys.find(item=>item.status==='Rebooked')!;
+        cy.visit(`/passengers/${protectedJourney.id}`);
+        cy.contains('PROTECTED ITINERARY').should('be.visible');
+        cy.visit('/event-timeline');
+        cy.get('select').eq(1).select('Passenger');
+        cy.get('input[placeholder*="Search events"]').type(protectedJourney.bookingReference);
+        cy.contains('Passenger journey rebooked').click();
+        cy.url().should('include',`/passengers/${protectedJourney.id}`);
+        return;
+      }
+      cy.visit(`/passengers/${candidate!.id}`);
+      cy.contains('Booking-level connection monitoring').should('be.visible');
+      cy.contains('button','Rebook passenger journey').click();
+      cy.get('select[formcontrolname="alternativeFlight"]').select(candidate!.alternativeFlights[0]);
+      cy.get('textarea[formcontrolname="notes"]').type('Protect this journey on the earliest available itinerary.');
+      cy.contains('button','Confirm rebooking').click();
+      cy.contains('Journey protected').should('be.visible');
+      cy.contains('PROTECTED ITINERARY').should('be.visible');
+      cy.visit('/event-timeline');
+      cy.get('select').eq(1).select('Passenger');
+      cy.get('input[placeholder*="Search events"]').type(candidate!.bookingReference);
+      cy.contains('Passenger journey rebooked').click();
+      cy.url().should('include',`/passengers/${candidate!.id}`);
+    });
+  });
+  it('opens flight-specific passenger impact from a flight record',()=>{
+    signIn();
+    cy.visit('/flights/AC103');
+    cy.contains('a','View passenger journeys').click();
+    cy.url().should('include','/passengers?flightId=AC103');
+    cy.get('select[aria-label="Filter by flight"]').should('have.value','AC103');
+    cy.get('tbody tr').should('have.length.greaterThan',0);
+    cy.get('tbody tr').each(row=>cy.wrap(row).should('contain','AC103'));
   });
 });

@@ -94,6 +94,7 @@ public sealed class FlightEndpointsTests : IClassFixture<AirOpsApiFactory>
         Assert.Equal(6, secondDatabase.Airports.Count());
         Assert.Equal(6, secondDatabase.Aircraft.Count());
         Assert.True(secondDatabase.OperationalEvents.Count() >= 6);
+        Assert.Equal(6, secondDatabase.PassengerJourneys.Count());
         Assert.Single(secondDatabase.SimulationClocks);
     }
 }

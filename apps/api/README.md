@@ -17,6 +17,9 @@ The development API listens on the URL printed by ASP.NET Core. Available endpoi
 - `GET /api/airports/{code}`
 - `GET /api/aircraft`
 - `GET /api/aircraft/{registration}`
+- `GET /api/passengers`
+- `GET /api/passengers/{id}`
+- `POST /api/passengers/{id}/rebook`
 - `GET /api/network/summary`
 - `GET /api/operations/events`
 - `GET /api/simulation/clock`
@@ -46,6 +49,8 @@ Flight list query parameters:
 
 Airport queries support `search` and `risk`. Aircraft queries support `search`, `status`, and `family`.
 
+Passenger queries support `search`, `status`, and `flightId`. Rebooking accepts an available `alternativeFlight` plus mandatory controller `notes`, persists the protected journey, lowers its active risk, and publishes a passenger event after the transaction commits.
+
 Operational events support `severity`, `category`, and `limit` filters. The simulation clock starts paused at the deterministic demonstration time. Manual advancement and the five-second background ticker publish flight-departure milestones exactly once.
 
 Every operational event is broadcast through the SignalR hub only after its database transaction commits. Clients can load retained history through the REST endpoint, subscribe for live updates, and safely reconnect without relying on an in-memory broker.
@@ -73,7 +78,7 @@ dotnet run --project apps/api/AirOps.Api
 
 PostgreSQL is published on host port `5433` to avoid colliding with a default local PostgreSQL installation.
 
-The API applies pending Entity Framework migrations at startup and inserts the deterministic five-flight dataset only when the table is empty. Override the development connection with the `ConnectionStrings__AirOps` environment variable.
+The API applies pending Entity Framework migrations at startup and inserts deterministic operational datasets—including five flights and six passenger journeys—only when their tables are empty. Override the development connection with the `ConnectionStrings__AirOps` environment variable.
 
 Restore the repository-local Entity Framework tool before creating future migrations:
 

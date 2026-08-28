@@ -69,7 +69,9 @@ export class EventTimelinePage implements OnDestroy {
     if (!event.entityType || !event.entityId) return;
     const prefix = event.entityType === 'flight'
       ? 'flights'
-      : event.entityType === 'airport' ? 'airports' : 'aircraft';
+      : event.entityType === 'airport'
+        ? 'airports'
+        : event.entityType === 'passenger' ? 'passengers' : 'aircraft';
     this.router.navigate(['/', prefix, event.entityId]);
   }
 

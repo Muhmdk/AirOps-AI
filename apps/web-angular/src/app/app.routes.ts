@@ -14,6 +14,8 @@ export const routes: Routes = [
   { path: 'airports/:code', canActivate: [authGuard], loadComponent: () => import('./features/airports/airport-detail.page').then(m => m.AirportDetailPage), title: 'Airport Operations · AirOps' },
   { path: 'aircraft', canActivate: [authGuard], loadComponent: () => import('./features/aircraft/aircraft.page').then(m => m.AircraftPage), title: 'Aircraft · AirOps' },
   { path: 'aircraft/:registration', canActivate: [authGuard], loadComponent: () => import('./features/aircraft/aircraft-detail.page').then(m => m.AircraftDetailPage), title: 'Aircraft Details · AirOps' },
+  { path: 'passengers', canActivate: [authGuard], loadComponent: () => import('./features/passengers/passengers.page').then(m => m.PassengersPage), title: 'Passenger Operations · AirOps' },
+  { path: 'passengers/:id', canActivate: [authGuard], loadComponent: () => import('./features/passengers/passenger-detail.page').then(m => m.PassengerDetailPage), title: 'Passenger Journey · AirOps' },
   { path: 'event-timeline', canActivate: [authGuard], loadComponent: () => import('./features/events/event-timeline.page').then(m => m.EventTimelinePage), title: 'Operational Events · AirOps' },
   { path: ':workspace', canActivate: [authGuard], loadComponent: () => import('./features/placeholders/workspace.page').then(m => m.WorkspacePage), data: { title: 'Operations workspace', description: 'This operational workspace is connected to the Phase 2 application shell.' } },
   { path: '', pathMatch: 'full', redirectTo: 'overview' },

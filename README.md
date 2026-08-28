@@ -4,7 +4,7 @@ AirOps AI is an airline operations control dashboard for detecting disruptions, 
 
 ## Current milestone
 
-The browser-based core MVP (Phases 2–4) is complete in `apps/web-angular`. The application now supports the complete controller workflow: detect a disruption, calculate network impact, compare recovery options, approve an action, and inspect the resulting network outcome.
+The API-backed operations MVP (Phases 2–5) is complete. The application supports the controller workflow from disruption detection and network-impact calculation through recovery approval, passenger protection, and the resulting operational audit trail.
 
 Phase 2 — Angular Operations Dashboard includes:
 
@@ -24,6 +24,7 @@ Phase 2 — Angular Operations Dashboard includes:
 - Aircraft Management workspace with fleet status, type filters, utilization, health, and maintenance readiness
 - Aircraft detail routes with specifications, assigned flights, and daily rotation timelines
 - Live Operational Event Timeline with search, severity/category filters, pause/resume controls, and entity deep links
+- Passenger Operations queue with booking search, status and flight filters, connection-risk assessment, service needs, recovery inventory, and rebooking
 - Reactive controller login, protected routes, session persistence, logout, and return-URL handling
 - Global error handling and HTTP correlation IDs
 - Cypress end-to-end coverage for the primary controller journey
@@ -119,9 +120,9 @@ The Phase 4 completion condition is satisfied: a controller can select a disrupt
 
 ## Current verification
 
-- 32 Angular unit and service-level tests
-- 32 backend integration tests
-- 5 Cypress end-to-end controller journeys
+- 37 Angular unit and service-level tests
+- 36 backend integration tests
+- 14 Cypress end-to-end controller journeys
 - Successful Angular production build
 
 The current MVP is an API-backed operational command center with PostgreSQL persistence, deterministic simulation services, and deliberate browser fallbacks for offline demonstrations and the local Scenario Lab.
@@ -160,10 +161,14 @@ The current MVP is an API-backed operational command center with PostgreSQL pers
 - Backend-powered recovery generation, comparison, approval, rejection, and decision audit
 - Full candidate refresh after recovery decisions with supervisor authorization support
 - Browser recovery-engine fallback for backend outages
+- PostgreSQL-backed passenger journeys with booking, itinerary, connection-window, loyalty, special-service, care-cost, and recovery-inventory data
+- Searchable passenger collection and detail APIs with persisted rebooking decisions and operational-event publication
+- Backend-powered Passenger Operations list/detail workspaces, flight-impact deep links, rebooking drawer, and offline demonstration fallback
 - Browser-validated controller journey from sign-in through disruption creation, backend impact calculation, recovery approval, immutable decision logging, and live SignalR event delivery
+- Browser-validated passenger journey from flight impact and booking search through persisted rebooking and event-timeline deep linking
 
 The Phase 5 completion condition is satisfied: every primary controller workspace is backed by the modular API and PostgreSQL, while the full disruption-to-recovery workflow is persisted, auditable, and reflected in the live event stream.
 
 ## Planned architecture
 
-The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. All primary controller workspaces now use backend APIs: operational events, flights, airports, aircraft, disruptions, recovery decisions, and overview KPIs. Browser engines remain as deliberate offline fallbacks and power the local Scenario Lab.
+The repository will grow into the monorepo described in the product brief: an Angular frontend, modular API, simulation engine, ML service, shared contracts, data platform, and Azure infrastructure. All primary controller workspaces now use backend APIs: operational events, flights, airports, aircraft, passengers, disruptions, recovery decisions, and overview KPIs. Browser engines remain as deliberate offline fallbacks and power the local Scenario Lab.

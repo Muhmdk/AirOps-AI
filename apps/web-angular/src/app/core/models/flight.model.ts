@@ -26,7 +26,7 @@ export interface OperationalEvent {
   detail: string;
   accent: 'amber' | 'red' | 'blue' | 'green';
   severity?: 'Critical' | 'Warning' | 'Information';
-  entityType?: 'flight' | 'airport' | 'aircraft';
+  entityType?: 'flight' | 'airport' | 'aircraft' | 'passenger';
   entityId?: string;
   category?: 'Weather' | 'Flight' | 'Gate' | 'Aircraft' | 'Passenger' | 'Simulation';
 }

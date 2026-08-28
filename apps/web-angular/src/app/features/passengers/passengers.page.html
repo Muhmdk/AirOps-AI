@@ -1,0 +1,53 @@
+<div class="shell">
+  <aside>
+    <a class="brand" routerLink="/overview"><b>▰ AirOps</b><small>COMMAND CENTER</small></a>
+    <nav>
+      <small>NETWORK</small><a routerLink="/overview">⌁ <span>Overview</span></a>
+      <a routerLink="/flights">✈ <span>Flights</span></a>
+      <a routerLink="/disruptions">△ <span>Disruptions</span></a>
+      <a routerLink="/recovery-plans">◇ <span>Recovery plans</span></a>
+      <small>OPERATIONS</small><a routerLink="/airports">⌾ <span>Airports</span></a>
+      <a routerLink="/aircraft">⌁ <span>Aircraft</span></a>
+      <a class="active" routerLink="/passengers">♧ <span>Passengers</span></a>
+      <a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
+    </nav>
+    <div class="system"><i></i><b>{{api.source() === 'backend' ? 'Passenger data synchronized' : 'Offline demonstration'}}</b></div>
+  </aside>
+  <main>
+    <header><div><p>NETWORK OPERATIONS / PASSENGERS</p><h1>Passenger operations</h1><span>Protect at-risk connections and coordinate recovery care.</span></div><div class="live"><i></i> Live journey risk</div></header>
+    <section class="content">
+      <div class="metrics">
+        <article><small>TRAVELERS MONITORED</small><b>{{totals().travelers}}</b><span>across active journeys</span></article>
+        <article><small>REQUIRING PROTECTION</small><b class="red">{{totals().atRisk}}</b><span>at risk or misconnected</span></article>
+        <article><small>MISCONNECTED</small><b class="red">{{totals().misconnected}}</b><span>connection window closed</span></article>
+        <article><small>REBOOKED</small><b class="green">{{totals().rebooked}}</b><span>journeys protected</span></article>
+        <article><small>CARE EXPOSURE</small><b>{{totals().careCost | currency:'CAD':'symbol-narrow':'1.0-0'}}</b><span>estimated service cost</span></article>
+      </div>
+      <article class="panel">
+        <div class="toolbar">
+          <label>⌕<input aria-label="Search passenger journeys" placeholder="Search passenger, booking, flight…" [ngModel]="search()" (ngModelChange)="search.set($event)"></label>
+          <div class="tabs">@for(item of statuses;track item){<button [class.active]="status()===item" (click)="status.set(item)">{{item}}</button>}</div>
+          <label class="flight-filter">Flight<select aria-label="Filter by flight" [ngModel]="flight()" (ngModelChange)="flight.set($event)"><option>All</option>@for(item of flights();track item){<option>{{item}}</option>}</select></label>
+          <span>{{visible().length}} journeys</span>
+        </div>
+        <div class="source">{{api.source() === 'backend' ? 'Synchronized with AirOps API and PostgreSQL' : 'Demonstration passenger data'}}</div>
+        @if(loading()){<div class="state"><div class="spinner"></div><h2>Loading passenger journeys</h2></div>}
+        @else if(error()){<div class="state"><b>!</b><h2>Passenger data unavailable</h2><p>{{error()}}</p><button (click)="load()">Try again</button></div>}
+        @else if(!visible().length){<div class="state"><b>⌕</b><h2>No passenger journeys match</h2><p>Change the passenger, status, or flight filter.</p><button (click)="clear()">Clear filters</button></div>}
+        @else{
+          <div class="table-wrap"><table><thead><tr><th>BOOKING / PASSENGER</th><th>ITINERARY</th><th>FLIGHTS</th><th>CONNECTION WINDOW</th><th>STATUS</th><th>RISK</th><th>CARE EXPOSURE</th><th></th></tr></thead><tbody>
+            @for(item of visible();track item.id){<tr tabindex="0" (click)="open(item)" (keydown.enter)="open(item)">
+              <td><b>{{item.bookingReference}}</b><span>{{item.leadPassenger}}</span><small>{{item.partySize}} traveler{{item.partySize===1?'':'s'}} · {{item.loyaltyTier}}</small></td>
+              <td><b>{{item.originCode}} → {{item.connectionAirport}} → {{item.destinationCode}}</b><small>Connection at {{item.connectionAirport}}</small></td>
+              <td><b>{{item.currentFlightId}}</b><small>connects to {{item.connectingFlightId}}</small></td>
+              <td><b [class.danger]="item.connectionShortfallMinutes>0">{{item.availableConnectionMinutes}} min available</b><small>{{item.minimumConnectionMinutes}} min required</small></td>
+              <td><span class="status {{item.status.toLowerCase().replace(' ','-')}}"><i></i>{{item.status}}</span></td>
+              <td><div class="risk"><span><i [style.width.%]="item.riskScore"></i></span><b>{{item.riskScore}}%</b></div></td>
+              <td><b>{{item.estimatedCareCost | currency:'CAD':'symbol-narrow':'1.0-0'}}</b><small>{{item.specialServices.length}} service needs</small></td><td>›</td>
+            </tr>}
+          </tbody></table></div>
+        }
+      </article>
+    </section>
+  </main>
+</div>

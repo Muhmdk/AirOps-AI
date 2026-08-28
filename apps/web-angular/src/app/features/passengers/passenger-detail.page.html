@@ -1,0 +1,56 @@
+<main>
+  <header><a routerLink="/passengers">← Passenger operations</a><span><i></i>{{api.source() === 'backend' ? 'Backend journey service' : 'Offline passenger service'}}</span></header>
+  @if(loading()){<div class="state"><div class="spinner"></div><h2>Loading passenger journey</h2></div>}
+  @else if(journey();as item){
+    <section class="hero">
+      <p>PASSENGER OPERATIONS / {{item.id}}</p>
+      <div><span class="avatar">{{item.leadPassenger.split(' ')[0][0]}}{{item.leadPassenger.split(' ')[1][0]}}</span><div><small>BOOKING {{item.bookingReference}}</small><h1>{{item.leadPassenger}}</h1><b>{{item.partySize}} traveler{{item.partySize===1?'':'s'}} · {{item.loyaltyTier}}</b></div><em class="status {{item.status.toLowerCase().replace(' ','-')}}"><i></i>{{item.status}}</em></div>
+    </section>
+    <section class="content">
+      @if(success()){<div class="success" role="status"><b>✓ Journey protected</b><span>{{success()}}</span></div>}
+      <div class="metrics">
+        <article><small>CONNECTION RISK</small><strong [class.red]="item.riskScore>=70">{{item.riskScore}}%</strong><span>current itinerary risk</span></article>
+        <article><small>AVAILABLE WINDOW</small><strong [class.red]="item.connectionShortfallMinutes>0">{{item.availableConnectionMinutes}} min</strong><span>{{item.minimumConnectionMinutes}} min required</span></article>
+        <article><small>CONNECTION SHORTFALL</small><strong [class.red]="item.connectionShortfallMinutes>0 && item.status!=='Rebooked'">{{item.connectionShortfallMinutes}} min</strong><span>{{item.status==='Rebooked'?'original itinerary':item.connectionShortfallMinutes?'requires protection':'connection protected'}}</span></article>
+        <article><small>CARE EXPOSURE</small><strong>{{item.estimatedCareCost | currency:'CAD':'symbol-narrow':'1.0-0'}}</strong><span>estimated passenger services</span></article>
+      </div>
+      <div class="columns">
+        <div>
+          <article class="journey-card"><div class="head"><div><h2>Current itinerary</h2><p>Booking-level connection monitoring</p></div><a [routerLink]="['/flights',item.currentFlightId]">Open current flight →</a></div>
+            <div class="itinerary"><div><span>1</span><section><small>ORIGIN</small><b>{{item.originCode}}</b><em>{{item.currentFlightId}}</em></section></div><i></i><div class="connection"><span>2</span><section><small>CONNECTION</small><b>{{item.connectionAirport}}</b><em>{{item.availableConnectionMinutes}} min available</em></section></div><i></i><div><span>3</span><section><small>DESTINATION</small><b>{{item.destinationCode}}</b><em>{{item.connectingFlightId}}</em></section></div></div>
+          </article>
+          <article><div class="head"><div><h2>Connection assessment</h2><p>Available transfer time compared with airport minimum</p></div></div>
+            <div class="assessment"><div class="risk-ring" [style.--risk]="item.riskScore+'%'">{{item.riskScore}}%</div><div><h3>{{item.status==='Rebooked'?'Journey protected on an alternate itinerary':item.connectionShortfallMinutes ? 'Connection protection required' : 'Connection remains protected'}}</h3><p>{{item.availableConnectionMinutes}} minutes {{item.status==='Rebooked'?'were':'remain'}} available against a {{item.minimumConnectionMinutes}}-minute minimum connection time at {{item.connectionAirport}}.</p><div class="window"><span [style.width.%]="(item.availableConnectionMinutes/item.minimumConnectionMinutes*100)>100?100:(item.availableConnectionMinutes/item.minimumConnectionMinutes*100)"></span></div><small>{{item.connectionShortfallMinutes ? item.connectionShortfallMinutes+' minute original-itinerary shortfall' : (item.availableConnectionMinutes-item.minimumConnectionMinutes)+' minute buffer'}}</small></div></div>
+          </article>
+          <article><div class="head"><div><h2>Passenger service requirements</h2><p>Care and handling tasks attached to this booking</p></div></div><div class="services">@for(service of item.specialServices;track service){<div><span>✓</span><b>{{service}}</b><small>Coordinate before itinerary change</small></div>}</div></article>
+        </div>
+        <aside>
+          <article><div class="head"><div><h2>Booking details</h2></div></div><dl><div><dt>Booking reference</dt><dd>{{item.bookingReference}}</dd></div><div><dt>Passenger record</dt><dd>{{item.id}}</dd></div><div><dt>Party size</dt><dd>{{item.partySize}}</dd></div><div><dt>Loyalty status</dt><dd>{{item.loyaltyTier}}</dd></div><div><dt>Current flight</dt><dd>{{item.currentFlightId}}</dd></div><div><dt>Connection</dt><dd>{{item.connectingFlightId}}</dd></div></dl></article>
+          @if(item.status==='Rebooked'){
+            <article class="protected"><span>✓</span><div><small>PROTECTED ITINERARY</small><b>{{item.selectedAlternativeFlight}}</b><p>{{item.rebookingNotes}}</p></div></article>
+          }@else{
+            <article class="options"><div class="head"><div><h2>Available recovery inventory</h2><p>{{item.alternativeFlights.length}} alternate itineraries</p></div></div>@for(option of item.alternativeFlights;track option){<div><span>✈</span><b>{{option}}</b></div>}</article>
+            <button class="primary" (click)="openRebook()">Rebook passenger journey →</button>
+          }
+          <a class="secondary" [routerLink]="['/flights',item.currentFlightId]">Evaluate flight recovery</a>
+        </aside>
+      </div>
+    </section>
+  }@else{<div class="state"><h2>Passenger journey not found</h2><p>{{loadError()}}</p><a routerLink="/passengers">Return to passenger operations</a></div>}
+</main>
+
+@if(showRebook() && journey();as item){
+  <div class="scrim" (click)="closeRebook()"></div>
+  <aside class="drawer" aria-label="Rebook passenger journey">
+    <button class="close" aria-label="Close rebooking" (click)="closeRebook()">×</button>
+    <small>PASSENGER RECOVERY</small><h2>Rebook {{item.bookingReference}}</h2><p>Protect {{item.partySize}} traveler{{item.partySize===1?'':'s'}} and record the controller decision.</p>
+    <form [formGroup]="form" (ngSubmit)="rebook()">
+      <label>Alternate itinerary<select formControlName="alternativeFlight">@for(option of item.alternativeFlights;track option){<option [value]="option">{{option}}</option>}</select></label>
+      <label>Controller notes<textarea formControlName="notes" rows="5" placeholder="Explain why this itinerary protects the passenger journey…"></textarea><small>Required · minimum 12 characters</small></label>
+      @if(form.controls.notes.touched && form.controls.notes.invalid){<div class="validation">Enter operational notes before confirming.</div>}
+      @if(actionError()){<div class="validation" role="alert">{{actionError()}}</div>}
+      <div class="summary"><span>Travelers<b>{{item.partySize}}</b></span><span>Risk before<b>{{item.riskScore}}%</b></span><span>Care exposure<b>{{item.estimatedCareCost | currency:'CAD':'symbol-narrow':'1.0-0'}}</b></span></div>
+      <button type="submit" [disabled]="submitting()">{{submitting()?'Rebooking journey…':'Confirm rebooking →'}}</button>
+    </form>
+  </aside>
+}

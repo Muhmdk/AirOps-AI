@@ -1,7 +1,170 @@
-<div class="shell"><aside><a class="brand" routerLink="/overview"><b>▰ AirOps</b><small>COMMAND CENTER</small></a><nav><small>NETWORK</small><a routerLink="/overview">⌁ <span>Overview</span></a><a routerLink="/flights">✈ <span>Flights</span></a><a routerLink="/disruptions">△ <span>Disruptions</span></a><a routerLink="/recovery-plans">◇ <span>Recovery plans</span></a><small>OPERATIONS</small><a class="active" routerLink="/airports">⌾ <span>Airports</span></a><a routerLink="/aircraft">⌁ <span>Aircraft</span></a><a routerLink="/event-timeline">≡ <span>Event timeline</span></a></nav><div class="system"><i></i><b>{{dataSource() === 'backend' ? 'Airport data synchronized' : 'Offline demonstration'}}</b></div></aside>
-<main><header><div><p>NETWORK OPERATIONS / AIRPORTS</p><h1>Airport operations</h1><span>Capacity, weather, and disruption risk across the network.</span></div><div class="live"><i></i> {{dataSource() === 'backend' ? 'Live network' : 'Demo network'}}</div></header><section class="content">
-<div class="metrics"><article><small>ACTIVE AIRPORTS</small><b>{{airports().length}}</b><span>in current network</span></article><article><small>FLIGHT MOVEMENTS</small><b>{{totals().movements | number}}</b><span>arrivals and departures</span></article><article><small>FLIGHTS AT RISK</small><b class="red">{{totals().atRisk}}</b><span>across all airports</span></article><article><small>AVERAGE DELAY</small><b class="amber">{{totals().delay}} min</b><span>network-wide</span></article></div>
-<article class="map-card"><div class="card-head"><div><h2>Network conditions</h2><p>Operational health by airport</p></div><div class="legend"><span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span><span><i class="high"></i>High</span></div></div><div class="map"><svg viewBox="0 0 900 250"><path d="M36 102l54-41 84-8 66-30 63 19 85-12 74 36 78-7 54 50 98 12 60 48-46 38-88-13-62 26-95-16-75 20-82-29-98 15-62-33-90-6-44-35z"/>@for(a of [{c:'YVR',x:120,y:175},{c:'YYC',x:267,y:154},{c:'YWG',x:430,y:166},{c:'YYZ',x:630,y:184},{c:'YUL',x:700,y:145},{c:'YHZ',x:812,y:169}];track a.c){<g (click)="open(airports().find(x=>x.code===a.c)!)"><circle [attr.cx]="a.x" [attr.cy]="a.y" r="13" [class]="airports().find(x=>x.code===a.c)?.risk?.toLowerCase()"/><circle [attr.cx]="a.x" [attr.cy]="a.y" r="5"/><text [attr.x]="a.x" [attr.y]="a.y-21">{{a.c}}</text></g>}</svg></div></article>
-<article class="panel"><div class="toolbar"><label>⌕<input placeholder="Search airport or city…" [ngModel]="search()" (ngModelChange)="search.set($event)"></label><div>@for(r of ['All','High','Moderate','Low'];track r){<button [class.active]="risk()===r" (click)="risk.set($any(r))">{{r}}</button>}</div><span>{{visible().length}} airports · {{dataSource() === 'backend' ? 'AirOps API' : 'offline data'}}</span></div>
-@if(loading()){<div class="state"><div class="spinner"></div><h2>Loading airport operations</h2></div>}@else if(!visible().length){<div class="state"><b>⌕</b><h2>No airports found</h2><p>Try a different city, airport code, or risk level.</p><button (click)="clear()">Clear filters</button></div>}@else{<div class="grid">@for(a of visible();track a.code){<article tabindex="0" (click)="open(a)" (keydown.enter)="open(a)"><div class="airport-head"><div class="code">{{a.code}}</div><div><h3>{{a.city}}</h3><p>{{a.name}}</p></div><span class="risk {{a.risk.toLowerCase()}}"><i></i>{{a.risk}}</span></div><div class="health"><div><small>OPERATIONAL HEALTH</small><b>{{a.health}}<i>/100</i></b></div><span><i [style.width.%]="a.health"></i></span></div><div class="stats"><div><small>AVG. DELAY</small><b>{{a.averageDelay}} min</b></div><div><small>AT RISK</small><b>{{a.atRisk}} flights</b></div><div><small>GATE USE</small><b>{{a.gatesUsed}} / {{a.gatesTotal}}</b></div></div><div class="weather"><span>☁</span><div><b>{{a.weather}} · {{a.temperature}}°C</b><small>{{a.wind}} · Visibility {{a.visibility}}</small></div><em>›</em></div></article>}</div>}
-</article></section></main></div>
+<div class="shell">
+  <aside>
+    <a class="brand" routerLink="/overview"><b>▰ AirOps</b><small>COMMAND CENTER</small></a>
+    <nav>
+      <small>NETWORK</small><a routerLink="/overview">⌁ <span>Overview</span></a
+      ><a routerLink="/flights">✈ <span>Flights</span></a
+      ><a routerLink="/disruptions">△ <span>Disruptions</span></a
+      ><a routerLink="/recovery-plans">◇ <span>Recovery plans</span></a
+      ><small>OPERATIONS</small><a class="active" routerLink="/airports">⌾ <span>Airports</span></a
+      ><a routerLink="/aircraft">⌁ <span>Aircraft</span></a
+      ><a routerLink="/passengers">♧ <span>Passengers</span></a
+      ><a routerLink="/event-timeline">≡ <span>Event timeline</span></a>
+    </nav>
+    <div class="system">
+      <i></i
+      ><b>{{
+        dataSource() === 'backend' ? 'Airport data synchronized' : 'Offline demonstration'
+      }}</b>
+    </div>
+  </aside>
+  <main>
+    <header>
+      <div>
+        <p>NETWORK OPERATIONS / AIRPORTS</p>
+        <h1>Airport operations</h1>
+        <span>Capacity, weather, and disruption risk across the network.</span>
+      </div>
+      <div class="live">
+        <i></i> {{ dataSource() === 'backend' ? 'Live network' : 'Demo network' }}
+      </div>
+    </header>
+    <section class="content">
+      <div class="metrics">
+        <article>
+          <small>ACTIVE AIRPORTS</small><b>{{ airports().length }}</b
+          ><span>in current network</span>
+        </article>
+        <article>
+          <small>FLIGHT MOVEMENTS</small><b>{{ totals().movements | number }}</b
+          ><span>arrivals and departures</span>
+        </article>
+        <article>
+          <small>FLIGHTS AT RISK</small><b class="red">{{ totals().atRisk }}</b
+          ><span>across all airports</span>
+        </article>
+        <article>
+          <small>AVERAGE DELAY</small><b class="amber">{{ totals().delay }} min</b
+          ><span>network-wide</span>
+        </article>
+      </div>
+      <article class="map-card">
+        <div class="card-head">
+          <div>
+            <h2>Network conditions</h2>
+            <p>Operational health by airport</p>
+          </div>
+          <div class="legend">
+            <span><i class="low"></i>Low</span><span><i class="moderate"></i>Moderate</span
+            ><span><i class="high"></i>High</span>
+          </div>
+        </div>
+        <div class="map">
+          <svg viewBox="0 0 900 250">
+            <path
+              d="M36 102l54-41 84-8 66-30 63 19 85-12 74 36 78-7 54 50 98 12 60 48-46 38-88-13-62 26-95-16-75 20-82-29-98 15-62-33-90-6-44-35z"
+            />
+            @for (
+              a of [
+                { c: 'YVR', x: 120, y: 175 },
+                { c: 'YYC', x: 267, y: 154 },
+                { c: 'YWG', x: 430, y: 166 },
+                { c: 'YYZ', x: 630, y: 184 },
+                { c: 'YUL', x: 700, y: 145 },
+                { c: 'YHZ', x: 812, y: 169 },
+              ];
+              track a.c
+            ) {
+              <g (click)="open(airports().find((x) => x.code === a.c)!)">
+                <circle
+                  [attr.cx]="a.x"
+                  [attr.cy]="a.y"
+                  r="13"
+                  [class]="
+                    airports()
+                      .find((x) => x.code === a.c)
+                      ?.risk?.toLowerCase()
+                  "
+                />
+                <circle [attr.cx]="a.x" [attr.cy]="a.y" r="5" />
+                <text [attr.x]="a.x" [attr.y]="a.y - 21">{{ a.c }}</text>
+              </g>
+            }
+          </svg>
+        </div>
+      </article>
+      <article class="panel">
+        <div class="toolbar">
+          <label
+            >⌕<input
+              placeholder="Search airport or city…"
+              [ngModel]="search()"
+              (ngModelChange)="search.set($event)"
+          /></label>
+          <div>
+            @for (r of ['All', 'High', 'Moderate', 'Low']; track r) {
+              <button [class.active]="risk() === r" (click)="risk.set($any(r))">{{ r }}</button>
+            }
+          </div>
+          <span
+            >{{ visible().length }} airports ·
+            {{ dataSource() === 'backend' ? 'AirOps API' : 'offline data' }}</span
+          >
+        </div>
+        @if (loading()) {
+          <div class="state">
+            <div class="spinner"></div>
+            <h2>Loading airport operations</h2>
+          </div>
+        } @else if (!visible().length) {
+          <div class="state">
+            <b>⌕</b>
+            <h2>No airports found</h2>
+            <p>Try a different city, airport code, or risk level.</p>
+            <button (click)="clear()">Clear filters</button>
+          </div>
+        } @else {
+          <div class="grid">
+            @for (a of visible(); track a.code) {
+              <article tabindex="0" (click)="open(a)" (keydown.enter)="open(a)">
+                <div class="airport-head">
+                  <div class="code">{{ a.code }}</div>
+                  <div>
+                    <h3>{{ a.city }}</h3>
+                    <p>{{ a.name }}</p>
+                  </div>
+                  <span class="risk {{ a.risk.toLowerCase() }}"><i></i>{{ a.risk }}</span>
+                </div>
+                <div class="health">
+                  <div>
+                    <small>OPERATIONAL HEALTH</small><b>{{ a.health }}<i>/100</i></b>
+                  </div>
+                  <span><i [style.width.%]="a.health"></i></span>
+                </div>
+                <div class="stats">
+                  <div>
+                    <small>AVG. DELAY</small><b>{{ a.averageDelay }} min</b>
+                  </div>
+                  <div>
+                    <small>AT RISK</small><b>{{ a.atRisk }} flights</b>
+                  </div>
+                  <div>
+                    <small>GATE USE</small><b>{{ a.gatesUsed }} / {{ a.gatesTotal }}</b>
+                  </div>
+                </div>
+                <div class="weather">
+                  <span>☁</span>
+                  <div>
+                    <b>{{ a.weather }} · {{ a.temperature }}°C</b
+                    ><small>{{ a.wind }} · Visibility {{ a.visibility }}</small>
+                  </div>
+                  <em>›</em>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </article>
+    </section>
+  </main>
+</div>

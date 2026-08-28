@@ -3,6 +3,7 @@ using AirOps.Api.Modules.Airports;
 using AirOps.Api.Modules.Disruptions;
 using AirOps.Api.Modules.Flights;
 using AirOps.Api.Modules.Operations;
+using AirOps.Api.Modules.Passengers;
 using AirOps.Api.Modules.Recovery;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,7 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
     public DbSet<DisruptionAuditEntry> DisruptionAuditEntries => Set<DisruptionAuditEntry>();
     public DbSet<RecoveryPlan> RecoveryPlans => Set<RecoveryPlan>();
     public DbSet<RecoveryAuditEntry> RecoveryAuditEntries => Set<RecoveryAuditEntry>();
+    public DbSet<PassengerJourney> PassengerJourneys => Set<PassengerJourney>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -306,5 +308,36 @@ public sealed class AirOpsDbContext(DbContextOptions<AirOpsDbContext> options) :
             .OnDelete(DeleteBehavior.Cascade);
         recoveryAudit.HasIndex(item => item.DisruptionId);
         recoveryAudit.HasIndex(item => item.Timestamp);
+
+        var passenger = modelBuilder.Entity<PassengerJourney>();
+        passenger.ToTable("passenger_journeys");
+        passenger.HasKey(item => item.Id);
+        passenger.Property(item => item.Id).HasColumnName("id").HasMaxLength(12);
+        passenger.Property(item => item.BookingReference).HasColumnName("booking_reference").HasMaxLength(8);
+        passenger.Property(item => item.LeadPassenger).HasColumnName("lead_passenger").HasMaxLength(80);
+        passenger.Property(item => item.PartySize).HasColumnName("party_size");
+        passenger.Property(item => item.LoyaltyTier).HasColumnName("loyalty_tier").HasMaxLength(40);
+        passenger.Property(item => item.CurrentFlightId).HasColumnName("current_flight_id").HasMaxLength(8);
+        passenger.Property(item => item.ConnectingFlightId).HasColumnName("connecting_flight_id").HasMaxLength(8);
+        passenger.Property(item => item.OriginCode).HasColumnName("origin_code").HasMaxLength(3);
+        passenger.Property(item => item.ConnectionAirport).HasColumnName("connection_airport").HasMaxLength(3);
+        passenger.Property(item => item.DestinationCode).HasColumnName("destination_code").HasMaxLength(3);
+        passenger.Property(item => item.MinimumConnectionMinutes).HasColumnName("minimum_connection_minutes");
+        passenger.Property(item => item.AvailableConnectionMinutes).HasColumnName("available_connection_minutes");
+        passenger.Property(item => item.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20);
+        passenger.Property(item => item.RiskScore).HasColumnName("risk_score");
+        passenger.Property(item => item.SpecialServices).HasColumnName("special_services").HasColumnType("text[]");
+        passenger.Property(item => item.AlternativeFlights).HasColumnName("alternative_flights").HasColumnType("text[]");
+        passenger.Property(item => item.SelectedAlternativeFlight).HasColumnName("selected_alternative_flight").HasMaxLength(120);
+        passenger.Property(item => item.EstimatedCareCost).HasColumnName("estimated_care_cost");
+        passenger.Property(item => item.RebookingNotes).HasColumnName("rebooking_notes").HasMaxLength(500);
+        passenger.Property(item => item.UpdatedAt).HasColumnName("updated_at");
+        passenger.Ignore(item => item.ConnectionShortfallMinutes);
+        passenger.HasOne<Flight>().WithMany().HasForeignKey(item => item.CurrentFlightId)
+            .OnDelete(DeleteBehavior.Restrict);
+        passenger.HasIndex(item => item.BookingReference).IsUnique();
+        passenger.HasIndex(item => item.Status);
+        passenger.HasIndex(item => item.RiskScore);
+        passenger.HasIndex(item => item.CurrentFlightId);
     }
 }

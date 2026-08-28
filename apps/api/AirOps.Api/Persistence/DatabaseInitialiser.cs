@@ -29,6 +29,8 @@ public static class DatabaseInitialiser
             database.SimulationClocks.Add(new SimulationClockState(DateTimeOffset.UtcNow));
         if (!await database.Disruptions.AnyAsync())
             database.Disruptions.AddRange(DisruptionSeed.All);
+        if (!await database.PassengerJourneys.AnyAsync())
+            database.PassengerJourneys.AddRange(PassengerSeed.All);
         await database.SaveChangesAsync();
 
         var activeDisruptions = await database.Disruptions.AsNoTracking()
